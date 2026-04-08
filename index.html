@@ -286,8 +286,8 @@
     </select>
   </div>
   <div class="setting-item">
-    <label>📏 角色大小 <span id="sizeValue">28</span></label>
-    <input type="range" id="sizeSlider" min="20" max="45" value="28" step="1">
+    <label>📏 角色大小 <span id="sizeValue">45</span></label>
+    <input type="range" id="sizeSlider" min="30" max="80" value="45" step="1">
   </div>
   <div class="setting-item">
     <label>🦘 跳跃力度 <span id="jumpValue">-7.2</span></label>
@@ -344,7 +344,7 @@
     };
 
     // ---------- 参数 ----------
-    let BASE_PLAYER_W = 28, BASE_PLAYER_H = 28;
+    let BASE_PLAYER_W = 45, BASE_PLAYER_H = 45;   // 默认改为45
     let JUMP_FORCE = -7.2;
     const GRAVITY = 0.48;
     const FRICTION_AIR = 0.80, FRICTION_GROUND = 0.88;
@@ -352,7 +352,7 @@
     const PLATFORM_H = 14, PLATFORM_SPEED = 2.5;
     const MIN_PLAT_W = 70, MAX_PLAT_W = 125;
     const MAX_PLATFORMS = 22;
-    const MAX_LIVES = 3;   // 上限3
+    const MAX_LIVES = 3;
     
     let lives = 3;
     let invulnerable = false, invulnerableTimer = 0;
@@ -363,9 +363,8 @@
     let platforms = [], powerups = [];
     let generateCooldown = 0;
     
-    // 难度调节系数
-    let platformSpawnRate = 1.0;   // 影响冷却时间
-    let heartSpawnProb = 0.8;       // 基础概率乘数
+    let platformSpawnRate = 1.0;
+    let heartSpawnProb = 0.8;
     
     let left = false, right = false, up = false, space = false;
     
@@ -377,12 +376,9 @@
     };
     let pauseKeyCode = 'KeyP';
     
-    // 皮肤图片 (3心/2心/1心/结束)
     let skin3 = null, skin2 = null, skin1 = null, skinGameover = null;
-    let customSkinActive = null; // 当前生效皮肤 (按血量)
     let currentTheme = 0;
     
-    // 动画
     let playerScale = 1.0, landSquash = 0, scorePop = 0, lastDepth = 0;
     
     // 音频
@@ -572,11 +568,17 @@
       ctx.font='bold 32px Poppins'; ctx.fillStyle='#fce5f0'; ctx.fillText(`🍰 ${Math.floor(depth)}`,20,70);
       if(!gameActive) {
         ctx.fillStyle = '#1a0f16cc'; ctx.fillRect(0,0,W,H);
-        if(skinGameover?.complete) ctx.drawImage(skinGameover, W/2-100, H/2-100, 200, 200);
-        else { ctx.font='bold 48px Segoe UI'; ctx.fillStyle='#ffc0d0'; ctx.textAlign='center'; ctx.fillText('💔 游戏结束',W/2,H/2); }
+        if(skinGameover?.complete) {
+          let imgSize = 300;  // 放大至300x300
+          ctx.drawImage(skinGameover, W/2 - imgSize/2, H/2 - imgSize/2, imgSize, imgSize);
+        } else {
+          ctx.font='bold 48px Segoe UI'; ctx.fillStyle='#ffc0d0'; ctx.textAlign='center';
+          ctx.fillText('💔 游戏结束',W/2,H/2);
+        }
       } else if(paused) {
         ctx.fillStyle = '#2a1a28cc'; ctx.fillRect(0,0,W,H);
-        ctx.font='bold 48px Segoe UI'; ctx.fillStyle='#ffe0f0'; ctx.textAlign='center'; ctx.fillText('⏸ 暂停',W/2,H/2);
+        ctx.font='bold 48px Segoe UI'; ctx.fillStyle='#ffe0f0'; ctx.textAlign='center';
+        ctx.fillText('⏸ 暂停',W/2,H/2);
       }
       ctx.textAlign='left';
     }
@@ -621,7 +623,11 @@
     
     document.getElementById('keyPresetSelect').onchange=e=>{ Object.assign(keyMap, presets[e.target.value]); };
     document.getElementById('pauseKeySelect').onchange=e=>{ pauseKeyCode = e.target.value; };
-    document.getElementById('sizeSlider').oninput=e=>{ BASE_PLAYER_W=BASE_PLAYER_H=parseInt(e.target.value); player.width=BASE_PLAYER_W; player.height=BASE_PLAYER_H; document.getElementById('sizeValue').textContent=e.target.value; };
+    document.getElementById('sizeSlider').oninput=e=>{ 
+      BASE_PLAYER_W = BASE_PLAYER_H = parseInt(e.target.value); 
+      player.width = BASE_PLAYER_W; player.height = BASE_PLAYER_H;
+      document.getElementById('sizeValue').textContent = e.target.value;
+    };
     document.getElementById('jumpSlider').oninput=e=>{ JUMP_FORCE=parseFloat(e.target.value); document.getElementById('jumpValue').textContent=JUMP_FORCE.toFixed(1); };
     document.getElementById('platformRateSlider').oninput=e=>{ platformSpawnRate=parseFloat(e.target.value); document.getElementById('platformRateVal').textContent=platformSpawnRate.toFixed(1); };
     document.getElementById('heartRateSlider').oninput=e=>{ heartSpawnProb=parseFloat(e.target.value); document.getElementById('heartRateVal').textContent=heartSpawnProb.toFixed(1); };
