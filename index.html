@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>🍰 甜品百层 · 丝滑变装</title>
+  <title>🍰 甜品百层 · 帧率适配</title>
   <style>
     * {
       margin: 0;
@@ -234,7 +234,7 @@
   <div class="hero-bar">
     <div class="title-section">
       <span class="game-icon">🍭</span>
-      <span class="game-title">甜品·丝滑</span>
+      <span class="game-title">甜品·帧率适配</span>
     </div>
     <div class="stats-group">
       <div class="depth-panel">
@@ -263,7 +263,7 @@
     <button class="touch-btn jump" id="touchJump">↑</button>
     <button class="touch-btn" id="touchRight">→</button>
   </div>
-  <div class="hint-text">← → 移动 · 拾❤回血 · 滑度可调</div>
+  <div class="hint-text">← → 移动 · 拾❤回血 · 高刷已适配</div>
 </div>
 
 <!-- 遮罩 + 设置抽屉 -->
@@ -354,12 +354,17 @@
       this.lineTo(x,y+r); this.quadraticCurveTo(x,y,x+r,y); return this;
     };
 
-    // ---------- 参数 ----------
+    // ---------- 固定时间步长 (帧率适配) ----------
+    const FIXED_TIMESTEP = 1000 / 60; // 目标60fps，每帧16.67ms
+    let lastTimestamp = 0;
+    let accumulator = 0;
+
+    // ---------- 参数 (所有速度值均已针对60fps校准) ----------
     let BASE_PLAYER_W = 45, BASE_PLAYER_H = 45;
     let JUMP_FORCE = -7.2;
     const GRAVITY = 0.48;
     const FRICTION_AIR = 0.80;
-    let FRICTION_GROUND = 0.88;      // 可调节
+    let FRICTION_GROUND = 0.88;
     const ACCEL = 0.9, MAX_SPEED_X = 6.8;
     const PLATFORM_H = 14, PLATFORM_SPEED = 2.5;
     const MIN_PLAT_W = 70, MAX_PLAT_W = 125;
@@ -457,7 +462,8 @@
       platforms.push({ x:10+Math.random()*(W-w-20), y:H+10+Math.random()*30, w, h:PLATFORM_H, counted:false, dessertType: Math.floor(Math.random()*5) });
     }
     
-    function applyPhysics(){
+    // 物理更新 (每一帧调用一次，代表 FIXED_TIMESTEP 的时间流逝)
+    function fixedUpdate() {
       if(!gameActive||paused) return;
       if(invulnerable){ invulnerableTimer--; if(invulnerableTimer<=0) invulnerable=false; }
       
@@ -541,18 +547,15 @@
       return null;
     }
     
-    // 优化后的甜品平台绘制（带巧克力碎、糖霜等高光）
     function drawDessertPlatform(pl) {
       const type = pl.dessertType || 0;
-      // 基础颜色方案
       let baseColor, lightColor, darkColor;
-      if (type === 0) { baseColor = '#d99fb0'; lightColor = '#f2c4d0'; darkColor = '#b2667a'; }      // 草莓
-      else if (type === 1) { baseColor = '#f7c0c6'; lightColor = '#ffe0e5'; darkColor = '#e08b9c'; } // 马卡龙
-      else if (type === 2) { baseColor = '#e3a0b5'; lightColor = '#f5c6d6'; darkColor = '#c46b84'; } // 玫瑰
-      else if (type === 3) { baseColor = '#dbb2c4'; lightColor = '#edd4e2'; darkColor = '#b47b94'; } // 紫薯
-      else { baseColor = '#f2d0d6'; lightColor = '#ffe9ee'; darkColor = '#d49aaa'; }                // 奶油
+      if (type === 0) { baseColor = '#d99fb0'; lightColor = '#f2c4d0'; darkColor = '#b2667a'; }
+      else if (type === 1) { baseColor = '#f7c0c6'; lightColor = '#ffe0e5'; darkColor = '#e08b9c'; }
+      else if (type === 2) { baseColor = '#e3a0b5'; lightColor = '#f5c6d6'; darkColor = '#c46b84'; }
+      else if (type === 3) { baseColor = '#dbb2c4'; lightColor = '#edd4e2'; darkColor = '#b47b94'; }
+      else { baseColor = '#f2d0d6'; lightColor = '#ffe9ee'; darkColor = '#d49aaa'; }
       
-      // 主平台渐变
       const grad = ctx.createLinearGradient(pl.x, pl.y, pl.x + pl.w, pl.y + pl.h);
       grad.addColorStop(0, lightColor);
       grad.addColorStop(0.5, baseColor);
@@ -565,14 +568,12 @@
       ctx.roundRect(pl.x, pl.y, pl.w, pl.h, 10);
       ctx.fill();
       
-      // 顶部高光（模拟糖霜光泽）
       ctx.shadowBlur = 8;
       ctx.fillStyle = '#ffffff60';
       ctx.beginPath();
       ctx.roundRect(pl.x + 2, pl.y - 1, pl.w - 4, 5, 4);
       ctx.fill();
       
-      // 巧克力碎块 / 糖粒
       ctx.shadowBlur = 4;
       ctx.fillStyle = '#5a3a2e';
       for (let i = 0; i < pl.w; i += 20) {
@@ -581,7 +582,6 @@
         ctx.fillStyle = '#4d2f24';
         ctx.fill();
       }
-      // 白色糖粒
       ctx.fillStyle = '#fff9f0';
       for (let i = 0; i < pl.w; i += 25) {
         ctx.beginPath();
@@ -589,7 +589,6 @@
         ctx.fill();
       }
       
-      // 边框
       ctx.shadowBlur = 0;
       ctx.strokeStyle = '#fbe4ec';
       ctx.lineWidth = 2.5;
@@ -650,7 +649,32 @@
       ctx.textAlign='left';
     }
     
-    function gameLoop(){ if(gameActive&&!paused) applyPhysics(); draw(); requestAnimationFrame(gameLoop); }
+    // 游戏主循环 (带固定时间步长)
+    function gameLoop(now) {
+      requestAnimationFrame(gameLoop);
+      
+      if (!lastTimestamp) {
+        lastTimestamp = now;
+        return;
+      }
+      
+      let deltaTime = now - lastTimestamp;
+      lastTimestamp = now;
+      
+      // 限制最大单次流逝时间 (避免标签页切换后delta过大)
+      if (deltaTime > 100) deltaTime = 100;
+      
+      accumulator += deltaTime;
+      
+      // 固定更新物理，直到追赶上当前时间
+      while (accumulator >= FIXED_TIMESTEP) {
+        fixedUpdate();
+        accumulator -= FIXED_TIMESTEP;
+      }
+      
+      // 渲染 (每一帧都绘制，保证流畅)
+      draw();
+    }
     
     // 事件绑定
     function handleKeyDown(e){
@@ -733,7 +757,8 @@
     canvas.addEventListener('touchstart', e=>e.preventDefault());
     canvas.addEventListener('click', ()=>{ enableAudio(); canvas.focus(); });
     
-    resetGame(); gameLoop();
+    resetGame();
+    requestAnimationFrame(gameLoop);
     document.body.addEventListener('click', enableAudio, {once:true});
   })();
 </script>
