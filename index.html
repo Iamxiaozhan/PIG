@@ -4,11 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>🍰 甜品百层 · 修复版</title>
-  <!-- Firebase SDK -->
+  <!-- Firebase SDK (可选，若不配置则使用本地模拟排行) -->
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
   <style>
-    /* 样式保持不变 (略) */
+    /* 全局样式保持不变，只增加摇杆相关样式（暂时注释） */
     * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
     body { background: #1e121c; display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: 'Segoe UI', 'Poppins', system-ui, sans-serif; padding: 0; margin: 0; }
     .game-wrapper { display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 780px; height: 100vh; max-height: 100vh; padding: 6px 4px; background: radial-gradient(circle at 30% 20%, #3b2535, #1e121c); }
@@ -28,7 +28,15 @@
     .btn.small { padding: 7px 12px; min-width: 70px; }
     .btn:active { transform: translateY(4px); border-bottom-width: 1px; }
     .touch-controls { display: flex; justify-content: center; gap: 20px; margin: 8px 0 2px; }
-    .touch-btn { background: #5a3e55; border: none; border-bottom: 5px solid #2f1e2a; color: white; font-size: 2rem; width: 75px; height: 75px; border-radius: 50%; box-shadow: 0 6px 0 #22161f, 0 8px 16px black; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.05s; touch-action: manipulation; }
+    .touch-btn {
+      background: #5a3e55; border: none; border-bottom: 5px solid #2f1e2a; color: white;
+      font-size: 2rem; width: 75px; height: 75px; border-radius: 50%;
+      box-shadow: 0 6px 0 #22161f, 0 8px 16px black;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: 0.05s;
+      touch-action: manipulation;  /* 关键：禁止默认手势 */
+      -webkit-touch-callout: none;
+    }
     .touch-btn.jump { background: #b85c7a; border-bottom-color: #6e344a; }
     .touch-btn:active { transform: translateY(5px); box-shadow: 0 1px 0 #22161f, 0 6px 12px black; }
     .hint-text { color: #dbb0c0; font-size: 0.75rem; margin-top: 2px; }
@@ -81,24 +89,23 @@
     <button class="touch-btn jump" id="touchJump">↑</button>
     <button class="touch-btn" id="touchRight">→</button>
   </div>
-  <div class="hint-text">← → 移动 · 拾❤回血 · 边缘不再爬墙</div>
+  <div class="hint-text">← → 移动 · 拾❤回血 · 多点触控已优化</div>
 </div>
 
 <!-- 排行榜模态框 -->
 <div class="modal" id="rankModal">
   <div class="modal-content">
-    <div class="modal-header"><h2>🏆 全球排行</h2><button class="close-modal" id="closeRankModal">&times;</button></div>
+    <div class="modal-header"><h2>🏆 排行榜</h2><button class="close-modal" id="closeRankModal">&times;</button></div>
     <div id="rankListContainer"><ul class="rank-list" id="rankList"></ul></div>
     <div id="submitScoreArea" style="display:none;">
       <input type="text" id="nicknameInput" class="input-nickname" placeholder="输入昵称" maxlength="12">
       <button class="submit-score-btn" id="submitScoreBtn">提交分数</button>
-      <p id="submitError" style="color: #ff8080; font-size:0.9rem; margin-top:5px;"></p>
     </div>
-    <p style="margin-top:12px; font-size:0.9rem; text-align:center;">—— 刷新查看最新排名 ——</p>
+    <p style="margin-top:12px; font-size:0.9rem; text-align:center;">—— 本地模拟排行 (可替换Firebase) ——</p>
   </div>
 </div>
 
-<!-- 设置抽屉 (内容不变) -->
+<!-- 设置抽屉 -->
 <div class="overlay" id="overlay"></div>
 <div class="settings-drawer" id="settingsDrawer">
   <div class="drawer-header"><span>⚙️ 设置</span><button class="close-btn" id="closeDrawer">&times;</button></div>
@@ -128,26 +135,41 @@
   (function(){
     "use strict";
     
-    // ---------- 初始化 Firebase (请替换为您的配置) ----------
-    const firebaseConfig = {
-      apiKey: "AIzaSyXXXXXXXXXXXXXXXXXXXXXXX",
-      authDomain: "your-project.firebaseapp.com",
-      projectId: "your-project-id",
-      storageBucket: "your-project.appspot.com",
-      messagingSenderId: "123456789",
-      appId: "1:123456789:web:abcdef"
-    };
-    
+    // ---------- 排行榜：优先尝试Firebase，若未配置则使用本地模拟 ----------
     let db = null;
-    let firebaseReady = false;
+    let useFirebase = false;
     try {
-      firebase.initializeApp(firebaseConfig);
-      db = firebase.firestore();
-      firebaseReady = true;
-    } catch(e) {
-      console.warn("Firebase 初始化失败，排行榜功能不可用。请检查配置。");
-      firebaseReady = false;
+      const firebaseConfig = {
+        // 请替换为您的Firebase配置，留空则自动使用本地模拟
+        apiKey: "",
+        authDomain: "",
+        projectId: "",
+        storageBucket: "",
+        messagingSenderId: "",
+        appId: ""
+      };
+      if (firebaseConfig.apiKey) {
+        firebase.initializeApp(firebaseConfig);
+        db = firebase.firestore();
+        useFirebase = true;
+        console.log("Firebase已初始化");
+      }
+    } catch(e) { useFirebase = false; }
+    
+    // 本地模拟排行榜存储
+    let localRankings = [];
+    const LOCAL_RANK_KEY = 'dessert_rankings';
+    function loadLocalRankings() {
+      try {
+        const stored = localStorage.getItem(LOCAL_RANK_KEY);
+        if(stored) localRankings = JSON.parse(stored);
+        else localRankings = [];
+      } catch(e){ localRankings = []; }
     }
+    function saveLocalRankings() {
+      localStorage.setItem(LOCAL_RANK_KEY, JSON.stringify(localRankings));
+    }
+    loadLocalRankings();
     
     // ---------- 画布 ----------
     const canvas = document.getElementById('gameCanvas');
@@ -271,6 +293,7 @@
       if(!gameActive||paused) return;
       if(invulnerable){ invulnerableTimer--; if(invulnerableTimer<=0) invulnerable=false; }
       
+      // 空中摩擦力保持不变，但水平移动加速度依然有效
       if(left) player.vx -= ACCEL;
       if(right) player.vx += ACCEL;
       player.vx *= (player.isGrounded ? FRICTION_GROUND : FRICTION_AIR);
@@ -287,42 +310,51 @@
       }
       if(!up && !space) player.jumpPressed = false;
       
-      // 水平移动
+      // 水平移动并限制边界
       player.x += player.vx;
-      
-      // 水平边界
-      if(player.x < 0) { player.x = 0; player.vx = 0; }
-      if(player.x + player.width > W) { player.x = W - player.width; player.vx = 0; }
-      
-      // 水平碰撞检测 (防止嵌入平台侧面)
-      for(let pl of platforms) {
-        if(player.y + player.height > pl.y && player.y < pl.y + pl.h) {
-          if(player.vx > 0 && player.x + player.width > pl.x && player.x < pl.x) {
-            player.x = pl.x - player.width;
-            player.vx = 0;
-          } else if(player.vx < 0 && player.x < pl.x + pl.w && player.x + player.width > pl.x + pl.w) {
-            player.x = pl.x + pl.w;
-            player.vx = 0;
-          }
-        }
-      }
+      player.x = Math.max(0, Math.min(W - player.width, player.x));
       
       // 垂直移动
       player.y += player.vy;
       
+      // 平台碰撞处理（改进：空中不进行横向推出，避免吸墙）
       let grounded = false;
-      for(let pl of platforms) {
-        if(player.x < pl.x + pl.w && player.x + player.width > pl.x) {
-          // 顶部碰撞 (玩家底部碰到平台顶部)
-          if(player.vy >= 0 && player.y + player.height >= pl.y && player.y < pl.y) {
-            player.y = pl.y - player.height;
-            player.vy = 0;
-            grounded = true;
-          }
-          // 底部碰撞 (头顶撞到平台底部)
-          else if(player.vy < 0 && player.y <= pl.y + pl.h && player.y + player.height > pl.y + pl.h) {
-            player.y = pl.y + pl.h;
-            player.vy = 0.1;
+      for(let iter=0; iter<6; iter++) {
+        for(let pl of platforms) {
+          if(player.x < pl.x+pl.w && player.x+player.width > pl.x && player.y < pl.y+pl.h && player.y+player.height > pl.y) {
+            const ovT = (player.y+player.height)-pl.y;
+            const ovB = (pl.y+pl.h)-player.y;
+            const ovL = (player.x+player.width)-pl.x;
+            const ovR = (pl.x+pl.w)-player.x;
+            
+            // 优先处理垂直碰撞
+            if(ovT > 0 && ovT < ovL && ovT < ovR && player.vy >= 0) {
+              player.y = pl.y - player.height;
+              player.vy = 0;
+              grounded = true;
+            } else if(ovB > 0 && ovB < ovL && ovB < ovR && player.vy < 0) {
+              player.y = pl.y + pl.h;
+              player.vy = 0.1;
+            } else {
+              // 水平碰撞：仅当角色在空中且未站在任何平台上时，才进行修正（避免空中吸墙）
+              // 但为了防止卡墙，仍进行简单处理
+              if (player.isGrounded) {
+                if(ovL < ovR) {
+                  player.x = pl.x - player.width;
+                  player.vx = 0;
+                } else {
+                  player.x = pl.x + pl.w;
+                  player.vx = 0;
+                }
+              } else {
+                // 空中轻微推开，但不完全阻止移动
+                if(ovL < ovR) {
+                  player.x = pl.x - player.width - 0.1;
+                } else {
+                  player.x = pl.x + pl.w + 0.1;
+                }
+              }
+            }
           }
         }
       }
@@ -335,13 +367,11 @@
       for(let pl of platforms) pl.y -= PLATFORM_SPEED;
       for(let pw of powerups) pw.y -= PLATFORM_SPEED;
       
-      // 移除平台并计分
       platforms = platforms.filter(pl => {
         if(pl.y+pl.h < 0) { if(!pl.counted) { pl.counted=true; depth++; if(depth>lastDepth){ scorePop=12; playSound('score'); } lastDepth=depth; updateUI(); } return false; }
         return true;
       });
       
-      // 拾取心心
       powerups = powerups.filter(pw => {
         if(pw.y + pw.h < 0) return false;
         if(player.x < pw.x+pw.w && player.x+player.width > pw.x && player.y < pw.y+pw.h && player.y+player.height > pw.y) {
@@ -359,19 +389,15 @@
         if(Math.random() < 0.008 * heartSpawnProb) spawnHeart();
       }
       
-      // 死亡检测
       if(gameActive && !invulnerable && (player.y+player.height >= H || player.y <= 0)) {
         lives--; updateUI(); playSound('gameover');
         if(lives <= 0) { 
           gameActive = false; 
           if(!lastScoreSubmitted) {
             pendingScore = depth;
-            const submitArea = document.getElementById('submitScoreArea');
-            submitArea.style.display = 'block';
+            document.getElementById('submitScoreArea').style.display = 'block';
             document.getElementById('rankModal').classList.add('show');
             lastScoreSubmitted = true;
-            // 清空错误信息
-            document.getElementById('submitError').textContent = '';
           }
         } else { respawnPlayer(); }
       }
@@ -425,23 +451,18 @@
         const px = player.x, py = player.y;
         ctx.shadowBlur = 22; ctx.shadowColor = '#f0b87b';
         const grad = ctx.createRadialGradient(px + w*0.2, py + h*0.2, 2, cx, cy, w*0.6);
-        grad.addColorStop(0, '#f5d742');
-        grad.addColorStop(1, '#d68b2c');
-        ctx.fillStyle = grad;
-        ctx.fillRect(px, py, w, h);
+        grad.addColorStop(0, '#f5d742'); grad.addColorStop(1, '#d68b2c');
+        ctx.fillStyle = grad; ctx.fillRect(px, py, w, h);
         ctx.fillStyle = '#191e2b';
         const eyeSize = w * 0.18;
-        const leftEyeX = px + w * 0.3;
-        const rightEyeX = px + w * 0.7;
-        const eyeY = py + h * 0.35;
+        const leftEyeX = px + w * 0.3, rightEyeX = px + w * 0.7, eyeY = py + h * 0.35;
         ctx.beginPath(); ctx.arc(leftEyeX, eyeY, eyeSize, 0, 2*Math.PI); ctx.fill();
         ctx.beginPath(); ctx.arc(rightEyeX, eyeY, eyeSize, 0, 2*Math.PI); ctx.fill();
         ctx.fillStyle = '#f5f9ff';
         const highlightSize = w * 0.09;
         ctx.beginPath(); ctx.arc(leftEyeX - w*0.03, eyeY - h*0.03, highlightSize, 0, 2*Math.PI); ctx.fill();
         ctx.beginPath(); ctx.arc(rightEyeX - w*0.03, eyeY - h*0.03, highlightSize, 0, 2*Math.PI); ctx.fill();
-        ctx.fillStyle = '#bd3b1b';
-        ctx.shadowBlur = 12;
+        ctx.fillStyle = '#bd3b1b'; ctx.shadowBlur = 12;
         ctx.fillRect(px - w*0.05, py - h*0.15, w*1.1, h*0.2);
         ctx.fillRect(px + w*0.25, py - h*0.35, w*0.2, h*0.25);
       }
@@ -486,50 +507,49 @@
       draw();
     }
     
-    // 排行榜功能 (兼容未配置Firebase)
+    // 排行榜功能
     async function fetchRankings() {
       const listEl = document.getElementById('rankList');
       listEl.innerHTML = '<li style="text-align:center;">加载中...</li>';
-      if (!firebaseReady || !db) {
-        listEl.innerHTML = '<li style="color:#ff8080;">Firebase 未配置</li><li style="font-size:0.8rem;">请替换代码中的 firebaseConfig</li>';
-        return;
-      }
       try {
-        const snapshot = await db.collection('rankings').orderBy('score', 'desc').limit(10).get();
-        listEl.innerHTML = '';
-        if (snapshot.empty) { listEl.innerHTML = '<li style="text-align:center;">暂无记录</li>'; return; }
-        snapshot.forEach(doc => {
-          const data = doc.data();
-          const li = document.createElement('li');
-          li.className = 'rank-item';
-          li.innerHTML = `<span class="rank-name">${data.name || '匿名'}</span><span class="rank-score">${data.score}</span>`;
-          listEl.appendChild(li);
-        });
-      } catch(e) {
-        listEl.innerHTML = '<li style="color:red;">加载失败，请检查网络或Firestore规则</li>';
-      }
+        if (useFirebase && db) {
+          const snapshot = await db.collection('rankings').orderBy('score', 'desc').limit(10).get();
+          listEl.innerHTML = '';
+          if (snapshot.empty) { listEl.innerHTML = '<li>暂无记录</li>'; return; }
+          snapshot.forEach(doc => {
+            const data = doc.data();
+            const li = document.createElement('li'); li.className = 'rank-item';
+            li.innerHTML = `<span class="rank-name">${data.name||'匿名'}</span><span class="rank-score">${data.score}</span>`;
+            listEl.appendChild(li);
+          });
+        } else {
+          // 本地模拟
+          localRankings.sort((a,b)=>b.score-a.score);
+          listEl.innerHTML = '';
+          if (localRankings.length === 0) { listEl.innerHTML = '<li>暂无记录</li>'; return; }
+          localRankings.slice(0,10).forEach(r => {
+            const li = document.createElement('li'); li.className = 'rank-item';
+            li.innerHTML = `<span class="rank-name">${r.name}</span><span class="rank-score">${r.score}</span>`;
+            listEl.appendChild(li);
+          });
+        }
+      } catch(e) { listEl.innerHTML = '<li>加载失败</li>'; }
     }
     
     async function submitScore(name, score) {
-      const errorEl = document.getElementById('submitError');
-      if (!firebaseReady || !db) {
-        errorEl.textContent = 'Firebase 未配置，无法提交';
-        return;
-      }
-      if(!name || name.trim() === '') name = '玩家';
+      if(!name) name = '玩家';
+      name = name.substring(0,12);
       try {
-        await db.collection('rankings').add({
-          name: name.substring(0,12),
-          score: score,
-          timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        });
+        if (useFirebase && db) {
+          await db.collection('rankings').add({ name, score, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
+        } else {
+          localRankings.push({ name, score });
+          saveLocalRankings();
+        }
         fetchRankings();
         document.getElementById('submitScoreArea').style.display = 'none';
-        errorEl.textContent = '';
-      } catch(e) {
-        errorEl.textContent = '提交失败，请检查Firestore安全规则';
-        console.error(e);
-      }
+        alert('分数已提交！');
+      } catch(e) { alert('提交失败'); }
     }
     
     // 事件绑定
@@ -551,11 +571,31 @@
       if(e.code===keyMap.jump2) { space=false; e.preventDefault(); }
     }
     window.addEventListener('keydown', handleKeyDown); window.addEventListener('keyup', handleKeyUp);
-    ['touchLeft','touchRight','touchJump'].forEach(id=>{
-      const el=document.getElementById(id); if(!el) return;
-      el.addEventListener('touchstart', (e)=>{ e.preventDefault(); if(id==='touchLeft') left=true; if(id==='touchRight') right=true; if(id==='touchJump'){ up=true; space=true; } });
-      el.addEventListener('touchend', (e)=>{ e.preventDefault(); if(id==='touchLeft') left=false; if(id==='touchRight') right=false; if(id==='touchJump'){ up=false; space=false; } });
-    });
+    
+    // 移动端触控：使用 pointerdown/pointerup 并设置 touch-action
+    const touchLeft = document.getElementById('touchLeft');
+    const touchRight = document.getElementById('touchRight');
+    const touchJump = document.getElementById('touchJump');
+    
+    function setupTouchButton(el, setter) {
+      el.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        el.setPointerCapture(e.pointerId);
+        setter(true);
+      });
+      el.addEventListener('pointerup', (e) => {
+        e.preventDefault();
+        el.releasePointerCapture(e.pointerId);
+        setter(false);
+      });
+      el.addEventListener('pointercancel', (e) => {
+        e.preventDefault();
+        setter(false);
+      });
+    }
+    setupTouchButton(touchLeft, (v) => left = v);
+    setupTouchButton(touchRight, (v) => right = v);
+    setupTouchButton(touchJump, (v) => { up = v; space = v; });
     
     document.getElementById('restartButton').onclick=()=>{ enableAudio(); resetGame(); };
     document.getElementById('pauseButton').onclick=()=>{ if(gameActive){ paused=!paused; document.getElementById('pauseButton').textContent = paused?'▶️ 继续':'⏸️ 暂停'; } };
@@ -564,23 +604,14 @@
     document.getElementById('rankBtn').onclick = ()=>{
       modal.classList.add('show');
       fetchRankings();
-      const submitArea = document.getElementById('submitScoreArea');
-      if(!gameActive && !lastScoreSubmitted) {
-        submitArea.style.display = 'block';
-        pendingScore = depth;
-      } else {
-        submitArea.style.display = 'none';
-      }
-      document.getElementById('submitError').textContent = '';
+      document.getElementById('submitScoreArea').style.display = gameActive ? 'none' : (lastScoreSubmitted ? 'none' : 'block');
     };
     document.getElementById('closeRankModal').onclick = ()=> modal.classList.remove('show');
-    
     document.getElementById('submitScoreBtn').onclick = ()=>{
       const name = document.getElementById('nicknameInput').value;
       submitScore(name, pendingScore);
     };
     
-    // 设置抽屉事件 (保持不变)
     const drawer=document.getElementById('settingsDrawer'), overlay=document.getElementById('overlay');
     document.getElementById('settingsToggle').onclick=()=>{ drawer.classList.add('open'); overlay.classList.add('show'); };
     document.getElementById('closeDrawer').onclick=()=>{ drawer.classList.remove('open'); overlay.classList.remove('show'); };
