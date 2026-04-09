@@ -3,9 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>你看你妈呢❤</title>
+  <title>🍰 甜品百层 · 自适应角色</title>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
   <style>
-    /* 样式保持不变，此处省略以节省篇幅，与上一版本完全相同 */
+    /* 样式与之前完全相同，此处省略以节省篇幅 */
     * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
     body { background: #1e121c; display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: 'Segoe UI', 'Poppins', system-ui, sans-serif; padding: 0; margin: 0; }
     .game-wrapper { display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 780px; height: 100vh; max-height: 100vh; padding: 6px 4px; background: radial-gradient(circle at 30% 20%, #3b2535, #1e121c); }
@@ -29,6 +32,18 @@
     .touch-btn.jump { background: #b85c7a; border-bottom-color: #6e344a; }
     .touch-btn:active { transform: translateY(5px); box-shadow: 0 1px 0 #22161f, 0 6px 12px black; }
     .hint-text { color: #dbb0c0; font-size: 0.75rem; margin-top: 2px; }
+    .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000000b0; display: none; justify-content: center; align-items: center; z-index: 2000; backdrop-filter: blur(4px); }
+    .modal.show { display: flex; }
+    .modal-content { background: #2f1d2b; border: 2px solid #e598b0; border-radius: 30px; padding: 20px; max-width: 400px; width: 90%; max-height: 70vh; overflow-y: auto; color: #fde3ef; box-shadow: 0 15px 30px black; }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+    .modal-header h2 { color: #ffd0b0; }
+    .close-modal { background: none; border: none; color: #ffc0d0; font-size: 2rem; cursor: pointer; }
+    .rank-list { list-style: none; padding: 0; }
+    .rank-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #b2667a; font-size: 1.2rem; }
+    .rank-name { font-weight: bold; }
+    .rank-score { color: #ffe3b0; }
+    .input-nickname { width: 100%; padding: 10px; margin: 10px 0; background: #3f2638; border: 1px solid #d99fb8; border-radius: 30px; color: white; font-size: 1.1rem; }
+    .submit-score-btn { background: #b85c7a; border: none; border-bottom: 4px solid #6e344a; color: white; padding: 10px; width: 100%; border-radius: 40px; font-weight: bold; cursor: pointer; }
     .settings-drawer { position: fixed; top: 0; right: 0; width: 300px; max-width: 85vw; height: 100vh; background: #2f1d2bf0; backdrop-filter: blur(20px); box-shadow: -8px 0 30px #00000060; border-left: 2px solid #e598b0; padding: 20px 16px; transform: translateX(100%); transition: transform 0.25s; z-index: 1000; overflow-y: auto; color: #fde3ef; }
     .settings-drawer.open { transform: translateX(0); }
     .drawer-header { display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 1.5rem; }
@@ -48,7 +63,7 @@
 <body>
 <div class="game-wrapper">
   <div class="hero-bar">
-    <div class="title-section"><span class="game-icon">🍭</span><span class="game-title">甜品·边界修正</span></div>
+    <div class="title-section"><span class="game-icon">🍭</span><span class="game-title">甜品·自适应</span></div>
     <div class="stats-group">
       <div class="depth-panel"><span>📉</span><span class="depth-number" id="depthDisplay">000</span></div>
       <div class="lives-panel"><span class="heart-icon">❤️</span><span id="livesCount">3</span></div>
@@ -58,6 +73,7 @@
   <div class="action-bar">
     <button class="btn" id="restartButton">🔄 重开</button>
     <button class="btn small" id="pauseButton">⏸️ 暂停</button>
+    <button class="btn small" id="rankBtn">🏆 排行</button>
     <button class="btn small" id="settingsToggle">⚙️ 设置</button>
   </div>
   <div class="touch-controls">
@@ -65,8 +81,23 @@
     <button class="touch-btn jump" id="touchJump">↑</button>
     <button class="touch-btn" id="touchRight">→</button>
   </div>
-  <div class="hint-text">← → 移动 · 拾❤回血 · 装饰点已内敛</div>
+  <div class="hint-text">← → 移动 · 拾❤回血 · 角色不变形</div>
 </div>
+
+<!-- 排行榜模态框 -->
+<div class="modal" id="rankModal">
+  <div class="modal-content">
+    <div class="modal-header"><h2>🏆 全球排行</h2><button class="close-modal" id="closeRankModal">&times;</button></div>
+    <div id="rankListContainer"><ul class="rank-list" id="rankList"></ul></div>
+    <div id="submitScoreArea" style="display:none;">
+      <input type="text" id="nicknameInput" class="input-nickname" placeholder="输入昵称" maxlength="12">
+      <button class="submit-score-btn" id="submitScoreBtn">提交分数</button>
+    </div>
+    <p style="margin-top:12px; font-size:0.9rem; text-align:center;">—— 刷新查看最新排名 ——</p>
+  </div>
+</div>
+
+<!-- 设置抽屉 -->
 <div class="overlay" id="overlay"></div>
 <div class="settings-drawer" id="settingsDrawer">
   <div class="drawer-header"><span>⚙️ 设置</span><button class="close-btn" id="closeDrawer">&times;</button></div>
@@ -95,6 +126,20 @@
 <script>
   (function(){
     "use strict";
+    
+    // ---------- 初始化 Firebase ----------
+    const firebaseConfig = {
+      apiKey: "AIzaSyXXXXXXXXXXXXXXXXXXXXXXX",
+      authDomain: "your-project.firebaseapp.com",
+      projectId: "your-project-id",
+      storageBucket: "your-project.appspot.com",
+      messagingSenderId: "123456789",
+      appId: "1:123456789:web:abcdef"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    
+    // ---------- 画布 ----------
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     const depthSpan = document.getElementById('depthDisplay');
@@ -129,6 +174,7 @@
     let skin3 = null, skin2 = null, skin1 = null, skinGameover = null, currentTheme = 0;
     let playerScale = 1.0, landSquash = 0, scorePop = 0, lastDepth = 0;
     let soundEnabled = true, audioCtx = null;
+    let lastScoreSubmitted = false, pendingScore = 0;
     
     function initAudio(){ if(!audioCtx) try{ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); audioCtx.resume(); } catch(e){} }
     function playSound(t){ 
@@ -153,7 +199,7 @@
     }
     function resetGame(){
       gameActive = true; paused = false; document.getElementById('pauseButton').textContent = '⏸️ 暂停';
-      lives = 3; depth = 0; lastDepth = 0; updateUI();
+      lives = 3; depth = 0; lastDepth = 0; updateUI(); lastScoreSubmitted = false;
       player.width = BASE_PLAYER_W; player.height = BASE_PLAYER_H;
       player.x = W/2 - player.width/2; player.y = 340; player.vx = 0; player.vy = 0; player.isGrounded = false;
       invulnerable = false; invulnerableTimer = 0; playerScale=1; landSquash=0;
@@ -162,14 +208,54 @@
       platforms.push({ x:W/2-80, y:baseY, w:130, h:PLATFORM_H, counted:false, dessertType:0 });
       platforms.push({ x:130, y:baseY-80, w:100, h:PLATFORM_H, counted:false, dessertType:1 });
       platforms.push({ x:430, y:baseY-150, w:110, h:PLATFORM_H, counted:false, dessertType:2 });
-      for(let i=0;i<4;i++) platforms.push({ x:30+Math.random()*(W-150), y:150+Math.random()*250, w:70+Math.floor(Math.random()*55), h:PLATFORM_H, counted:false, dessertType: Math.floor(Math.random()*5) });
+      for(let i=0;i<4;i++) {
+        let x, y, w, overlapping;
+        do {
+          overlapping = false;
+          x = 30 + Math.random()*(W-150);
+          y = 150 + Math.random()*250;
+          w = 70 + Math.floor(Math.random()*55);
+          for(let p of platforms) if(Math.abs(p.y - y) < 50 && Math.abs((p.x+p.w/2) - (x+w/2)) < 80) { overlapping = true; break; }
+        } while(overlapping);
+        platforms.push({ x, y, w, h:PLATFORM_H, counted:false, dessertType: Math.floor(Math.random()*5) });
+      }
       generateCooldown=10; left=right=up=space=false; playSound('click');
     }
+    
+    function isOverlappingWithPlatforms(newX, newY, newW) {
+      for(let p of platforms) if(Math.abs(p.y - newY) < 60 && newX < p.x+p.w && newX+newW > p.x) return true;
+      return false;
+    }
+    
     function spawnPlatform(){
       if(!gameActive||paused||platforms.length>=MAX_PLATFORMS) return;
-      const w = MIN_PLAT_W + Math.floor(Math.random()*(MAX_PLAT_W-MIN_PLAT_W));
-      platforms.push({ x:10+Math.random()*(W-w-20), y:H+10+Math.random()*30, w, h:PLATFORM_H, counted:false, dessertType: Math.floor(Math.random()*5) });
+      let x, y, w, overlapping, attempts = 0;
+      do {
+        overlapping = false;
+        w = MIN_PLAT_W + Math.floor(Math.random()*(MAX_PLAT_W-MIN_PLAT_W));
+        x = 10 + Math.random()*(W - w - 20);
+        y = H + 10 + Math.random()*30;
+        overlapping = isOverlappingWithPlatforms(x, y, w);
+        attempts++;
+      } while(overlapping && attempts < 20);
+      platforms.push({ x, y, w, h:PLATFORM_H, counted:false, dessertType: Math.floor(Math.random()*5) });
     }
+    
+    function spawnHeart(){
+      if(!gameActive||paused||powerups.length >= 6) return;
+      let x, y, overlapping, attempts = 0;
+      const hw = 24, hh = 24;
+      do {
+        overlapping = false;
+        x = 20 + Math.random()*(W - hw - 40);
+        y = H + 20 + Math.random()*30;
+        for(let p of platforms) if(Math.abs(p.y - y) < 50 && x < p.x+p.w && x+hw > p.x) { overlapping = true; break; }
+        for(let pw of powerups) if(Math.abs(pw.y - y) < 40 && Math.abs(pw.x - x) < 40) { overlapping = true; break; }
+        attempts++;
+      } while(overlapping && attempts < 15);
+      if(!overlapping) powerups.push({ x, y, w: hw, h: hh });
+    }
+    
     function fixedUpdate() {
       if(!gameActive||paused) return;
       if(invulnerable){ invulnerableTimer--; if(invulnerableTimer<=0) invulnerable=false; }
@@ -214,78 +300,108 @@
         baseCooldown = Math.max(12, baseCooldown / platformSpawnRate);
         if(generateCooldown<=0) { spawnPlatform(); generateCooldown = Math.floor(baseCooldown); }
         else generateCooldown--;
-        if(Math.random() < 0.008 * heartSpawnProb && powerups.length < 5) { powerups.push({ x:20+Math.random()*(W-60), y:H+20, w:24, h:24 }); }
+        if(Math.random() < 0.008 * heartSpawnProb) spawnHeart();
       }
       if(gameActive && !invulnerable && (player.y+player.height >= H || player.y <= 0)) {
         lives--; updateUI(); playSound('gameover');
-        if(lives <= 0) { gameActive = false; }
-        else { respawnPlayer(); }
+        if(lives <= 0) { 
+          gameActive = false; 
+          if(!lastScoreSubmitted) {
+            pendingScore = depth;
+            document.getElementById('submitScoreArea').style.display = 'block';
+            document.getElementById('rankModal').classList.add('show');
+            lastScoreSubmitted = true;
+          }
+        } else { respawnPlayer(); }
       }
       playerScale = playerScale*0.9 + 1.0*0.1; landSquash *= 0.7; scorePop = Math.max(0, scorePop-1);
     }
+    
     function getCurrentSkin() {
       if(!gameActive && skinGameover) return skinGameover;
       if(lives === 3) return skin3; if(lives === 2) return skin2; if(lives === 1) return skin1;
       return null;
     }
     
-    // 修复版甜品平台绘制：所有装饰点严格限制在平台内部
     function drawDessertPlatform(pl) {
       const type = pl.dessertType || 0;
-      let baseColor, lightColor, darkColor;
-      if (type === 0) { baseColor = '#d99fb0'; lightColor = '#f2c4d0'; darkColor = '#b2667a'; }
-      else if (type === 1) { baseColor = '#f7c0c6'; lightColor = '#ffe0e5'; darkColor = '#e08b9c'; }
-      else if (type === 2) { baseColor = '#e3a0b5'; lightColor = '#f5c6d6'; darkColor = '#c46b84'; }
-      else if (type === 3) { baseColor = '#dbb2c4'; lightColor = '#edd4e2'; darkColor = '#b47b94'; }
-      else { baseColor = '#f2d0d6'; lightColor = '#ffe9ee'; darkColor = '#d49aaa'; }
-      
-      const grad = ctx.createLinearGradient(pl.x, pl.y, pl.x + pl.w, pl.y + pl.h);
-      grad.addColorStop(0, lightColor); grad.addColorStop(0.5, baseColor); grad.addColorStop(1, darkColor);
+      let base, light, dark;
+      if (type === 0) { base = '#d99fb0'; light = '#f2c4d0'; dark = '#b2667a'; }
+      else if (type === 1) { base = '#f7c0c6'; light = '#ffe0e5'; dark = '#e08b9c'; }
+      else if (type === 2) { base = '#e3a0b5'; light = '#f5c6d6'; dark = '#c46b84'; }
+      else if (type === 3) { base = '#dbb2c4'; light = '#edd4e2'; dark = '#b47b94'; }
+      else { base = '#f2d0d6'; light = '#ffe9ee'; dark = '#d49aaa'; }
+      const grad = ctx.createLinearGradient(pl.x, pl.y, pl.x+pl.w, pl.y+pl.h);
+      grad.addColorStop(0, light); grad.addColorStop(0.5, base); grad.addColorStop(1, dark);
       ctx.fillStyle = grad; ctx.shadowBlur = 14; ctx.shadowColor = '#ffb0c0';
-      ctx.beginPath(); ctx.roundRect(pl.x, pl.y, pl.w, pl.h, 10); ctx.fill();
-      
-      ctx.shadowBlur = 8; ctx.fillStyle = '#ffffff60';
-      ctx.beginPath(); ctx.roundRect(pl.x + 2, pl.y - 1, pl.w - 4, 5, 4); ctx.fill();
-      
-      ctx.shadowBlur = 4;
-      // 巧克力碎：确保绘制在内部，限制步长并检查边界
-      const chocoSize = 3;
-      for (let i = 8; i < pl.w - 8; i += 20) {
-        let x = pl.x + i;
-        if (x + chocoSize > pl.x + pl.w) x = pl.x + pl.w - chocoSize - 2;
-        if (x < pl.x + 2) x = pl.x + 2;
-        ctx.beginPath();
-        ctx.arc(x, pl.y + 8, chocoSize, 0, 2*Math.PI);
-        ctx.fillStyle = '#4d2f24';
-        ctx.fill();
+      ctx.beginPath(); ctx.roundRect(pl.x, pl.y, pl.w, pl.h, 8); ctx.fill();
+      ctx.shadowBlur = 4; ctx.lineWidth = 1.5; ctx.strokeStyle = '#ffffff30';
+      for(let i = -pl.h; i < pl.w + pl.h; i += 12) {
+        ctx.beginPath(); ctx.moveTo(pl.x + i, pl.y); ctx.lineTo(pl.x + i - pl.h, pl.y + pl.h); ctx.stroke();
       }
-      // 白色糖粒：同样确保边界
-      const sugarSize = 2.5;
-      for (let i = 12; i < pl.w - 8; i += 25) {
-        let x = pl.x + i;
-        if (x + sugarSize > pl.x + pl.w) x = pl.x + pl.w - sugarSize - 2;
-        if (x < pl.x + 2) x = pl.x + 2;
-        ctx.beginPath();
-        ctx.arc(x, pl.y + 5, sugarSize, 0, 2*Math.PI);
-        ctx.fillStyle = '#fff9f0';
-        ctx.fill();
+      for(let i = 0; i < pl.w + pl.h; i += 12) {
+        ctx.beginPath(); ctx.moveTo(pl.x + i, pl.y); ctx.lineTo(pl.x + i + pl.h, pl.y + pl.h); ctx.stroke();
       }
-      
+      ctx.shadowBlur = 8; ctx.fillStyle = '#ffffff90';
+      ctx.beginPath(); ctx.roundRect(pl.x + 3, pl.y - 2, pl.w - 6, 6, 4); ctx.fill();
       ctx.shadowBlur = 0; ctx.strokeStyle = '#fbe4ec'; ctx.lineWidth = 2.5; ctx.stroke();
     }
     
+    // 修改后的 drawPlayer：默认角色使用比例绘制，适应任意尺寸
     function drawPlayer(){
       const skin = getCurrentSkin();
-      const cx=player.x+player.width/2, cy=player.y+player.height/2;
-      ctx.save(); ctx.translate(cx,cy); ctx.scale(playerScale, playerScale*(1-landSquash*0.02)); ctx.translate(-cx,-cy);
-      if(skin && skin.complete) { ctx.shadowBlur=20; ctx.shadowColor='#f0b87b'; ctx.drawImage(skin, player.x, player.y, player.width, player.height); }
-      else {
-        ctx.shadowBlur=22; ctx.shadowColor='#f0b87b';
-        const g=ctx.createRadialGradient(player.x+5,player.y+5,3,cx,cy,18); g.addColorStop(0,'#f5d742'); g.addColorStop(1,'#d68b2c');
-        ctx.fillStyle=g; ctx.fillRect(player.x,player.y,player.width,player.height);
-        ctx.fillStyle='#191e2b'; ctx.beginPath(); ctx.arc(player.x+8,player.y+9,5,0,2*Math.PI); ctx.fill(); ctx.beginPath(); ctx.arc(player.x+player.width-8,player.y+9,5,0,2*Math.PI); ctx.fill();
-        ctx.fillStyle='#f5f9ff'; ctx.beginPath(); ctx.arc(player.x+6,player.y+7,2.5,0,2*Math.PI); ctx.fill(); ctx.beginPath(); ctx.arc(player.x+player.width-10,player.y+7,2.5,0,2*Math.PI); ctx.fill();
-      } ctx.restore();
+      const cx = player.x + player.width/2, cy = player.y + player.height/2;
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.scale(playerScale, playerScale * (1 - landSquash*0.02));
+      ctx.translate(-cx, -cy);
+      
+      if(skin && skin.complete) {
+        ctx.shadowBlur = 20; ctx.shadowColor = '#f0b87b';
+        ctx.drawImage(skin, player.x, player.y, player.width, player.height);
+      } else {
+        // 默认角色：基于当前宽高比例绘制
+        const w = player.width, h = player.height;
+        const px = player.x, py = player.y;
+        
+        ctx.shadowBlur = 22; ctx.shadowColor = '#f0b87b';
+        // 身体渐变
+        const grad = ctx.createRadialGradient(px + w*0.2, py + h*0.2, 2, cx, cy, w*0.6);
+        grad.addColorStop(0, '#f5d742');
+        grad.addColorStop(1, '#d68b2c');
+        ctx.fillStyle = grad;
+        ctx.fillRect(px, py, w, h);
+        
+        // 眼睛 (黑色底)
+        ctx.fillStyle = '#191e2b';
+        const eyeSize = w * 0.18;
+        const leftEyeX = px + w * 0.3;
+        const rightEyeX = px + w * 0.7;
+        const eyeY = py + h * 0.35;
+        ctx.beginPath();
+        ctx.arc(leftEyeX, eyeY, eyeSize, 0, 2*Math.PI);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(rightEyeX, eyeY, eyeSize, 0, 2*Math.PI);
+        ctx.fill();
+        
+        // 眼睛高光 (白色)
+        ctx.fillStyle = '#f5f9ff';
+        const highlightSize = w * 0.09;
+        ctx.beginPath();
+        ctx.arc(leftEyeX - w*0.03, eyeY - h*0.03, highlightSize, 0, 2*Math.PI);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(rightEyeX - w*0.03, eyeY - h*0.03, highlightSize, 0, 2*Math.PI);
+        ctx.fill();
+        
+        // 帽子 (小红帽)
+        ctx.fillStyle = '#bd3b1b';
+        ctx.shadowBlur = 12;
+        ctx.fillRect(px - w*0.05, py - h*0.15, w*1.1, h*0.2);
+        ctx.fillRect(px + w*0.25, py - h*0.35, w*0.2, h*0.25);
+      }
+      ctx.restore();
     }
     
     function draw(){
@@ -326,7 +442,33 @@
       draw();
     }
     
-    // 事件监听（与之前相同，此处略作精简，但保留全部功能）
+    // 排行榜功能
+    async function fetchRankings() {
+      const listEl = document.getElementById('rankList');
+      listEl.innerHTML = '<li style="text-align:center;">加载中...</li>';
+      try {
+        const snapshot = await db.collection('rankings').orderBy('score', 'desc').limit(10).get();
+        listEl.innerHTML = '';
+        if (snapshot.empty) { listEl.innerHTML = '<li style="text-align:center;">暂无记录</li>'; return; }
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          const li = document.createElement('li');
+          li.className = 'rank-item';
+          li.innerHTML = `<span class="rank-name">${data.name || '匿名'}</span><span class="rank-score">${data.score}</span>`;
+          listEl.appendChild(li);
+        });
+      } catch(e) { listEl.innerHTML = '<li style="color:red;">加载失败</li>'; }
+    }
+    async function submitScore(name, score) {
+      if(!name || name.trim() === '') name = '玩家';
+      try {
+        await db.collection('rankings').add({ name: name.substring(0,12), score: score, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
+        fetchRankings();
+        document.getElementById('submitScoreArea').style.display = 'none';
+      } catch(e) { alert('提交失败，请检查网络'); }
+    }
+    
+    // 事件绑定
     function handleKeyDown(e){
       enableAudio();
       if(e.code === pauseKeyCode) { e.preventDefault(); if(gameActive){ paused=!paused; document.getElementById('pauseButton').textContent = paused?'▶️ 继续':'⏸️ 暂停'; } return; }
@@ -352,13 +494,30 @@
     });
     document.getElementById('restartButton').onclick=()=>{ enableAudio(); resetGame(); };
     document.getElementById('pauseButton').onclick=()=>{ if(gameActive){ paused=!paused; document.getElementById('pauseButton').textContent = paused?'▶️ 继续':'⏸️ 暂停'; } };
+    
+    const modal = document.getElementById('rankModal');
+    document.getElementById('rankBtn').onclick = ()=>{
+      modal.classList.add('show');
+      fetchRankings();
+      document.getElementById('submitScoreArea').style.display = gameActive ? 'none' : (lastScoreSubmitted ? 'none' : 'block');
+    };
+    document.getElementById('closeRankModal').onclick = ()=> modal.classList.remove('show');
+    document.getElementById('submitScoreBtn').onclick = ()=>{
+      const name = document.getElementById('nicknameInput').value;
+      submitScore(name, pendingScore);
+    };
+    
     const drawer=document.getElementById('settingsDrawer'), overlay=document.getElementById('overlay');
     document.getElementById('settingsToggle').onclick=()=>{ drawer.classList.add('open'); overlay.classList.add('show'); };
     document.getElementById('closeDrawer').onclick=()=>{ drawer.classList.remove('open'); overlay.classList.remove('show'); };
     overlay.onclick=()=>{ drawer.classList.remove('open'); overlay.classList.remove('show'); };
     document.getElementById('keyPresetSelect').onchange=e=>{ Object.assign(keyMap, presets[e.target.value]); };
     document.getElementById('pauseKeySelect').onchange=e=>{ pauseKeyCode = e.target.value; };
-    document.getElementById('sizeSlider').oninput=e=>{ BASE_PLAYER_W = BASE_PLAYER_H = parseInt(e.target.value); player.width = BASE_PLAYER_W; player.height = BASE_PLAYER_H; document.getElementById('sizeValue').textContent = e.target.value; };
+    document.getElementById('sizeSlider').oninput=e=>{ 
+      BASE_PLAYER_W = BASE_PLAYER_H = parseInt(e.target.value); 
+      player.width = BASE_PLAYER_W; player.height = BASE_PLAYER_H;
+      document.getElementById('sizeValue').textContent = e.target.value;
+    };
     document.getElementById('jumpSlider').oninput=e=>{ JUMP_FORCE=parseFloat(e.target.value); document.getElementById('jumpValue').textContent=JUMP_FORCE.toFixed(1); };
     document.getElementById('frictionSlider').oninput=e=>{ FRICTION_GROUND = parseFloat(e.target.value); document.getElementById('frictionValue').textContent = FRICTION_GROUND.toFixed(2); };
     document.getElementById('platformRateSlider').oninput=e=>{ platformSpawnRate=parseFloat(e.target.value); document.getElementById('platformRateVal').textContent=platformSpawnRate.toFixed(1); };
@@ -379,6 +538,7 @@
     document.getElementById('gameoverSkinBtn').onclick = ()=>{ pendingSkinType='gameover'; skinUpload.click(); };
     skinUpload.onchange = (e) => { if(e.target.files.length) { handleSkinUpload(e.target.files[0], pendingSkinType); skinUpload.value=''; } };
     document.getElementById('resetAllSkins').onclick = ()=>{ skin3=skin2=skin1=skinGameover=null; };
+    
     canvas.addEventListener('touchstart', e=>e.preventDefault());
     canvas.addEventListener('click', ()=>{ enableAudio(); canvas.focus(); });
     resetGame(); requestAnimationFrame(gameLoop);
