@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>🍰 甜品百层 · 甜心变装</title>
+  <title>🍰 甜品百层 · 丝滑变装</title>
   <style>
     * {
       margin: 0;
@@ -36,7 +36,6 @@
       background: radial-gradient(circle at 30% 20%, #3b2535, #1e121c);
     }
 
-    /* 头部紧凑 */
     .hero-bar {
       width: 100%;
       display: flex;
@@ -84,7 +83,6 @@
     .heart-icon { font-size: 1.3rem; }
     #livesCount { font-size: 1.3rem; font-weight: bold; color: #ffb0b0; }
 
-    /* 画布区域自适应 */
     .canvas-container {
       position: relative;
       border-radius: 20px;
@@ -106,7 +104,6 @@
       touch-action: none;
     }
 
-    /* 底部操作栏 */
     .action-bar {
       margin-top: 6px;
       display: flex;
@@ -172,7 +169,7 @@
     .settings-drawer {
       position: fixed;
       top: 0; right: 0;
-      width: 280px;
+      width: 300px;
       max-width: 85vw;
       height: 100vh;
       background: #2f1d2bf0;
@@ -214,8 +211,15 @@
       background: #00000060; z-index: 999; display: none;
     }
     .overlay.show { display: block; }
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .checkbox-item input {
+      width: 20px; height: 20px;
+    }
 
-    /* 移动端适配 */
     @media (min-width: 768px) {
       .touch-controls { display: none; }
       .game-wrapper { padding: 8px; }
@@ -230,7 +234,7 @@
   <div class="hero-bar">
     <div class="title-section">
       <span class="game-icon">🍭</span>
-      <span class="game-title">甜品·变装</span>
+      <span class="game-title">甜品·丝滑</span>
     </div>
     <div class="stats-group">
       <div class="depth-panel">
@@ -259,7 +263,7 @@
     <button class="touch-btn jump" id="touchJump">↑</button>
     <button class="touch-btn" id="touchRight">→</button>
   </div>
-  <div class="hint-text">← → 移动 · 拾❤回血(上限3) · 按设置调难度</div>
+  <div class="hint-text">← → 移动 · 拾❤回血 · 滑度可调</div>
 </div>
 
 <!-- 遮罩 + 设置抽屉 -->
@@ -294,14 +298,21 @@
     <input type="range" id="jumpSlider" min="-10.0" max="-4.5" value="-7.2" step="0.1">
   </div>
   <div class="setting-item">
+    <label>🧊 平滑度 (摩擦力) <span id="frictionValue">0.88</span></label>
+    <input type="range" id="frictionSlider" min="0.70" max="0.98" value="0.88" step="0.01">
+    <small>数值越小越滑(像冰块)</small>
+  </div>
+  <div class="setting-item">
     <label>🍰 平台生成速度 <span id="platformRateVal">1.0</span></label>
     <input type="range" id="platformRateSlider" min="0.5" max="2.0" value="1.0" step="0.1">
-    <small style="opacity:0.8;">数值越大平台越多</small>
   </div>
   <div class="setting-item">
     <label>❤️ 心心出现概率 <span id="heartRateVal">0.8</span></label>
     <input type="range" id="heartRateSlider" min="0.0" max="2.5" value="0.8" step="0.1">
-    <small>0=无, 越高越多</small>
+  </div>
+  <div class="setting-item checkbox-item">
+    <label>🔊 音效开关</label>
+    <input type="checkbox" id="soundToggle" checked>
   </div>
   <div class="setting-item">
     <label>🖼️ 状态皮肤</label>
@@ -344,10 +355,11 @@
     };
 
     // ---------- 参数 ----------
-    let BASE_PLAYER_W = 45, BASE_PLAYER_H = 45;   // 默认改为45
+    let BASE_PLAYER_W = 45, BASE_PLAYER_H = 45;
     let JUMP_FORCE = -7.2;
     const GRAVITY = 0.48;
-    const FRICTION_AIR = 0.80, FRICTION_GROUND = 0.88;
+    const FRICTION_AIR = 0.80;
+    let FRICTION_GROUND = 0.88;      // 可调节
     const ACCEL = 0.9, MAX_SPEED_X = 6.8;
     const PLATFORM_H = 14, PLATFORM_SPEED = 2.5;
     const MIN_PLAT_W = 70, MAX_PLAT_W = 125;
@@ -381,11 +393,15 @@
     
     let playerScale = 1.0, landSquash = 0, scorePop = 0, lastDepth = 0;
     
-    // 音频
+    // 音效开关
+    let soundEnabled = true;
     let audioCtx = null;
-    function initAudio(){ if(!audioCtx) try{ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); audioCtx.resume(); } catch(e){} }
+    
+    function initAudio(){ 
+      if(!audioCtx) try{ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); audioCtx.resume(); } catch(e){} 
+    }
     function playSound(t){ 
-      if(!audioCtx||audioCtx.state!=='running') return; 
+      if(!soundEnabled || !audioCtx || audioCtx.state!=='running') return; 
       const now=audioCtx.currentTime; const o=audioCtx.createOscillator(), g=audioCtx.createGain(); 
       o.connect(g); g.connect(audioCtx.destination); 
       let f=440,d=0.12,v=0.15; 
@@ -397,7 +413,10 @@
       g.gain.setValueAtTime(v,now); g.gain.exponentialRampToValueAtTime(0.01,now+d); 
       o.frequency.value=f; o.start(); o.stop(now+d); 
     }
-    function enableAudio(){ initAudio(); if(audioCtx?.state==='suspended') audioCtx.resume(); }
+    function enableAudio(){ 
+      initAudio(); 
+      if(audioCtx?.state==='suspended') audioCtx.resume(); 
+    }
     
     function updateUI(){ 
       depthSpan.textContent = String(Math.min(999,Math.floor(depth))).padStart(3,'0'); 
@@ -522,6 +541,61 @@
       return null;
     }
     
+    // 优化后的甜品平台绘制（带巧克力碎、糖霜等高光）
+    function drawDessertPlatform(pl) {
+      const type = pl.dessertType || 0;
+      // 基础颜色方案
+      let baseColor, lightColor, darkColor;
+      if (type === 0) { baseColor = '#d99fb0'; lightColor = '#f2c4d0'; darkColor = '#b2667a'; }      // 草莓
+      else if (type === 1) { baseColor = '#f7c0c6'; lightColor = '#ffe0e5'; darkColor = '#e08b9c'; } // 马卡龙
+      else if (type === 2) { baseColor = '#e3a0b5'; lightColor = '#f5c6d6'; darkColor = '#c46b84'; } // 玫瑰
+      else if (type === 3) { baseColor = '#dbb2c4'; lightColor = '#edd4e2'; darkColor = '#b47b94'; } // 紫薯
+      else { baseColor = '#f2d0d6'; lightColor = '#ffe9ee'; darkColor = '#d49aaa'; }                // 奶油
+      
+      // 主平台渐变
+      const grad = ctx.createLinearGradient(pl.x, pl.y, pl.x + pl.w, pl.y + pl.h);
+      grad.addColorStop(0, lightColor);
+      grad.addColorStop(0.5, baseColor);
+      grad.addColorStop(1, darkColor);
+      
+      ctx.fillStyle = grad;
+      ctx.shadowBlur = 14;
+      ctx.shadowColor = '#ffb0c0';
+      ctx.beginPath();
+      ctx.roundRect(pl.x, pl.y, pl.w, pl.h, 10);
+      ctx.fill();
+      
+      // 顶部高光（模拟糖霜光泽）
+      ctx.shadowBlur = 8;
+      ctx.fillStyle = '#ffffff60';
+      ctx.beginPath();
+      ctx.roundRect(pl.x + 2, pl.y - 1, pl.w - 4, 5, 4);
+      ctx.fill();
+      
+      // 巧克力碎块 / 糖粒
+      ctx.shadowBlur = 4;
+      ctx.fillStyle = '#5a3a2e';
+      for (let i = 0; i < pl.w; i += 20) {
+        ctx.beginPath();
+        ctx.arc(pl.x + i + 8 + Math.sin(i)*3, pl.y + 8, 3, 0, 2*Math.PI);
+        ctx.fillStyle = '#4d2f24';
+        ctx.fill();
+      }
+      // 白色糖粒
+      ctx.fillStyle = '#fff9f0';
+      for (let i = 0; i < pl.w; i += 25) {
+        ctx.beginPath();
+        ctx.arc(pl.x + i + 12, pl.y + 5, 2.5, 0, 2*Math.PI);
+        ctx.fill();
+      }
+      
+      // 边框
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = '#fbe4ec';
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+    }
+    
     function drawPlayer(){
       const skin = getCurrentSkin();
       const cx=player.x+player.width/2, cy=player.y+player.height/2;
@@ -545,15 +619,8 @@
       else { grad.addColorStop(0,'#3d1e22'); grad.addColorStop(0.6,'#752e38'); }
       ctx.fillStyle = grad; ctx.fillRect(0,0,W,H);
       
-      for(let pl of platforms) {
-        let grad = ctx.createLinearGradient(pl.x, pl.y, pl.x+pl.w, pl.y+pl.h);
-        grad.addColorStop(0,'#d99fb0'); grad.addColorStop(1,'#b2667a');
-        ctx.fillStyle = grad; ctx.shadowBlur = 14; ctx.shadowColor = '#ffb0c0';
-        ctx.beginPath(); ctx.roundRect(pl.x, pl.y, pl.w, pl.h, 10); ctx.fill();
-        ctx.shadowBlur = 6; ctx.fillStyle = '#fff9f0';
-        for(let i=0;i<pl.w;i+=18) { ctx.beginPath(); ctx.arc(pl.x+i+8, pl.y+4, 3, 0, 2*Math.PI); ctx.fill(); }
-        ctx.shadowBlur = 0; ctx.strokeStyle = '#fbe4ec'; ctx.lineWidth=2; ctx.stroke();
-      }
+      for(let pl of platforms) drawDessertPlatform(pl);
+      
       for(let pw of powerups) {
         ctx.save(); ctx.translate(pw.x+pw.w/2, pw.y+pw.h/2); ctx.scale(0.8,0.8);
         ctx.fillStyle = '#ff4d6d'; ctx.shadowBlur=20; ctx.shadowColor='#ffb0b0';
@@ -569,7 +636,7 @@
       if(!gameActive) {
         ctx.fillStyle = '#1a0f16cc'; ctx.fillRect(0,0,W,H);
         if(skinGameover?.complete) {
-          let imgSize = 300;  // 放大至300x300
+          let imgSize = 300;
           ctx.drawImage(skinGameover, W/2 - imgSize/2, H/2 - imgSize/2, imgSize, imgSize);
         } else {
           ctx.font='bold 48px Segoe UI'; ctx.fillStyle='#ffc0d0'; ctx.textAlign='center';
@@ -629,9 +696,14 @@
       document.getElementById('sizeValue').textContent = e.target.value;
     };
     document.getElementById('jumpSlider').oninput=e=>{ JUMP_FORCE=parseFloat(e.target.value); document.getElementById('jumpValue').textContent=JUMP_FORCE.toFixed(1); };
+    document.getElementById('frictionSlider').oninput=e=>{ 
+      FRICTION_GROUND = parseFloat(e.target.value); 
+      document.getElementById('frictionValue').textContent = FRICTION_GROUND.toFixed(2);
+    };
     document.getElementById('platformRateSlider').oninput=e=>{ platformSpawnRate=parseFloat(e.target.value); document.getElementById('platformRateVal').textContent=platformSpawnRate.toFixed(1); };
     document.getElementById('heartRateSlider').oninput=e=>{ heartSpawnProb=parseFloat(e.target.value); document.getElementById('heartRateVal').textContent=heartSpawnProb.toFixed(1); };
     document.getElementById('themeSelect').onchange=e=>{ currentTheme = {default:0, forest:1, lava:2}[e.target.value]; };
+    document.getElementById('soundToggle').onchange=e=>{ soundEnabled = e.target.checked; };
     
     const skinUpload = document.getElementById('skinUpload');
     let pendingSkinType = '';
