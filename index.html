@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>🍰 甜品百层 · 自适应角色</title>
+  <title>🍰 甜品百层 · 修复版</title>
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
   <style>
-    /* 样式与之前完全相同，此处省略以节省篇幅 */
+    /* 样式保持不变 (略) */
     * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
     body { background: #1e121c; display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: 'Segoe UI', 'Poppins', system-ui, sans-serif; padding: 0; margin: 0; }
     .game-wrapper { display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 780px; height: 100vh; max-height: 100vh; padding: 6px 4px; background: radial-gradient(circle at 30% 20%, #3b2535, #1e121c); }
@@ -63,7 +63,7 @@
 <body>
 <div class="game-wrapper">
   <div class="hero-bar">
-    <div class="title-section"><span class="game-icon">🍭</span><span class="game-title">甜品·自适应</span></div>
+    <div class="title-section"><span class="game-icon">🍭</span><span class="game-title">甜品·修复版</span></div>
     <div class="stats-group">
       <div class="depth-panel"><span>📉</span><span class="depth-number" id="depthDisplay">000</span></div>
       <div class="lives-panel"><span class="heart-icon">❤️</span><span id="livesCount">3</span></div>
@@ -81,7 +81,7 @@
     <button class="touch-btn jump" id="touchJump">↑</button>
     <button class="touch-btn" id="touchRight">→</button>
   </div>
-  <div class="hint-text">← → 移动 · 拾❤回血 · 角色不变形</div>
+  <div class="hint-text">← → 移动 · 拾❤回血 · 边缘不再爬墙</div>
 </div>
 
 <!-- 排行榜模态框 -->
@@ -92,19 +92,20 @@
     <div id="submitScoreArea" style="display:none;">
       <input type="text" id="nicknameInput" class="input-nickname" placeholder="输入昵称" maxlength="12">
       <button class="submit-score-btn" id="submitScoreBtn">提交分数</button>
+      <p id="submitError" style="color: #ff8080; font-size:0.9rem; margin-top:5px;"></p>
     </div>
     <p style="margin-top:12px; font-size:0.9rem; text-align:center;">—— 刷新查看最新排名 ——</p>
   </div>
 </div>
 
-<!-- 设置抽屉 -->
+<!-- 设置抽屉 (内容不变) -->
 <div class="overlay" id="overlay"></div>
 <div class="settings-drawer" id="settingsDrawer">
   <div class="drawer-header"><span>⚙️ 设置</span><button class="close-btn" id="closeDrawer">&times;</button></div>
   <div class="setting-item"><label>⌨️ 键位</label><select id="keyPresetSelect"><option value="arrows" selected>方向键</option><option value="wasd">WASD</option><option value="ijkl">IJKL</option></select></div>
   <div class="setting-item"><label>⏸️ 暂停键</label><select id="pauseKeySelect"><option value="KeyP" selected>P</option><option value="Escape">Esc</option><option value="KeyQ">Q</option></select></div>
   <div class="setting-item"><label>📏 角色大小 <span id="sizeValue">45</span></label><input type="range" id="sizeSlider" min="30" max="80" value="45" step="1"></div>
-  <div class="setting-item"><label>🦘 跳跃力度 <span id="jumpValue">-7.2</span></label><input type="range" id="jumpSlider" min="-10.0" max="-4.5" value="-7.2" step="0.1"></div>
+  <div class="setting-item"><label>🦘 跳跃力度 <span id="jumpValue">7.2</span></label><input type="range" id="jumpSlider" min="4.5" max="10.0" value="7.2" step="0.1"></div>
   <div class="setting-item"><label>🧊 平滑度 (摩擦力) <span id="frictionValue">0.88</span></label><input type="range" id="frictionSlider" min="0.70" max="0.98" value="0.88" step="0.01"></div>
   <div class="setting-item"><label>🍰 平台生成速度 <span id="platformRateVal">1.0</span></label><input type="range" id="platformRateSlider" min="0.5" max="2.0" value="1.0" step="0.1"></div>
   <div class="setting-item"><label>❤️ 心心出现概率 <span id="heartRateVal">0.8</span></label><input type="range" id="heartRateSlider" min="0.0" max="2.5" value="0.8" step="0.1"></div>
@@ -127,7 +128,7 @@
   (function(){
     "use strict";
     
-    // ---------- 初始化 Firebase ----------
+    // ---------- 初始化 Firebase (请替换为您的配置) ----------
     const firebaseConfig = {
       apiKey: "AIzaSyXXXXXXXXXXXXXXXXXXXXXXX",
       authDomain: "your-project.firebaseapp.com",
@@ -136,8 +137,17 @@
       messagingSenderId: "123456789",
       appId: "1:123456789:web:abcdef"
     };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+    
+    let db = null;
+    let firebaseReady = false;
+    try {
+      firebase.initializeApp(firebaseConfig);
+      db = firebase.firestore();
+      firebaseReady = true;
+    } catch(e) {
+      console.warn("Firebase 初始化失败，排行榜功能不可用。请检查配置。");
+      firebaseReady = false;
+    }
     
     // ---------- 画布 ----------
     const canvas = document.getElementById('gameCanvas');
@@ -157,7 +167,8 @@
 
     const FIXED_TIMESTEP = 1000 / 60;
     let lastTimestamp = 0, accumulator = 0;
-    let BASE_PLAYER_W = 45, BASE_PLAYER_H = 45, JUMP_FORCE = -7.2;
+    let BASE_PLAYER_W = 45, BASE_PLAYER_H = 45;
+    let JUMP_STRENGTH = 7.2;
     const GRAVITY = 0.48, FRICTION_AIR = 0.80, ACCEL = 0.9, MAX_SPEED_X = 6.8;
     let FRICTION_GROUND = 0.88;
     const PLATFORM_H = 14, PLATFORM_SPEED = 2.5, MIN_PLAT_W = 70, MAX_PLAT_W = 125, MAX_PLATFORMS = 22, MAX_LIVES = 3;
@@ -259,34 +270,78 @@
     function fixedUpdate() {
       if(!gameActive||paused) return;
       if(invulnerable){ invulnerableTimer--; if(invulnerableTimer<=0) invulnerable=false; }
+      
       if(left) player.vx -= ACCEL;
       if(right) player.vx += ACCEL;
       player.vx *= (player.isGrounded ? FRICTION_GROUND : FRICTION_AIR);
       if(Math.abs(player.vx)<0.15) player.vx=0;
       player.vx = Math.min(MAX_SPEED_X, Math.max(-MAX_SPEED_X, player.vx));
+      
       player.vy += GRAVITY; if(player.vy>13) player.vy=13;
-      if((up||space) && player.isGrounded && !player.jumpPressed) { player.vy = JUMP_FORCE; player.isGrounded = false; player.jumpPressed = true; playerScale = 1.25; playSound('jump'); }
+      if((up||space) && player.isGrounded && !player.jumpPressed) {
+        player.vy = -JUMP_STRENGTH;
+        player.isGrounded = false;
+        player.jumpPressed = true;
+        playerScale = 1.25;
+        playSound('jump');
+      }
       if(!up && !space) player.jumpPressed = false;
-      player.x += player.vx; player.x = Math.max(0, Math.min(W - player.width, player.x));
-      player.y += player.vy;
-      let grounded = false;
-      for(let iter=0; iter<6; iter++) {
-        for(let pl of platforms) {
-          if(player.x < pl.x+pl.w && player.x+player.width > pl.x && player.y < pl.y+pl.h && player.y+player.height > pl.y) {
-            const ovT = (player.y+player.height)-pl.y;
-            if(ovT > 0 && player.vy >= 0) { player.y = pl.y - player.height; player.vy = 0; grounded = true; }
+      
+      // 水平移动
+      player.x += player.vx;
+      
+      // 水平边界
+      if(player.x < 0) { player.x = 0; player.vx = 0; }
+      if(player.x + player.width > W) { player.x = W - player.width; player.vx = 0; }
+      
+      // 水平碰撞检测 (防止嵌入平台侧面)
+      for(let pl of platforms) {
+        if(player.y + player.height > pl.y && player.y < pl.y + pl.h) {
+          if(player.vx > 0 && player.x + player.width > pl.x && player.x < pl.x) {
+            player.x = pl.x - player.width;
+            player.vx = 0;
+          } else if(player.vx < 0 && player.x < pl.x + pl.w && player.x + player.width > pl.x + pl.w) {
+            player.x = pl.x + pl.w;
+            player.vx = 0;
           }
         }
       }
+      
+      // 垂直移动
+      player.y += player.vy;
+      
+      let grounded = false;
+      for(let pl of platforms) {
+        if(player.x < pl.x + pl.w && player.x + player.width > pl.x) {
+          // 顶部碰撞 (玩家底部碰到平台顶部)
+          if(player.vy >= 0 && player.y + player.height >= pl.y && player.y < pl.y) {
+            player.y = pl.y - player.height;
+            player.vy = 0;
+            grounded = true;
+          }
+          // 底部碰撞 (头顶撞到平台底部)
+          else if(player.vy < 0 && player.y <= pl.y + pl.h && player.y + player.height > pl.y + pl.h) {
+            player.y = pl.y + pl.h;
+            player.vy = 0.1;
+          }
+        }
+      }
+      
       const wasGrounded = player.isGrounded;
       player.isGrounded = grounded;
       if(!wasGrounded && grounded) { landSquash=8; playerScale=0.85; playSound('land'); }
+      
+      // 平台上升
       for(let pl of platforms) pl.y -= PLATFORM_SPEED;
       for(let pw of powerups) pw.y -= PLATFORM_SPEED;
+      
+      // 移除平台并计分
       platforms = platforms.filter(pl => {
         if(pl.y+pl.h < 0) { if(!pl.counted) { pl.counted=true; depth++; if(depth>lastDepth){ scorePop=12; playSound('score'); } lastDepth=depth; updateUI(); } return false; }
         return true;
       });
+      
+      // 拾取心心
       powerups = powerups.filter(pw => {
         if(pw.y + pw.h < 0) return false;
         if(player.x < pw.x+pw.w && player.x+player.width > pw.x && player.y < pw.y+pw.h && player.y+player.height > pw.y) {
@@ -295,6 +350,7 @@
         }
         return true;
       });
+      
       if(gameActive && !paused) {
         let baseCooldown = Math.max(16, 34 - Math.floor(depth/18));
         baseCooldown = Math.max(12, baseCooldown / platformSpawnRate);
@@ -302,18 +358,24 @@
         else generateCooldown--;
         if(Math.random() < 0.008 * heartSpawnProb) spawnHeart();
       }
+      
+      // 死亡检测
       if(gameActive && !invulnerable && (player.y+player.height >= H || player.y <= 0)) {
         lives--; updateUI(); playSound('gameover');
         if(lives <= 0) { 
           gameActive = false; 
           if(!lastScoreSubmitted) {
             pendingScore = depth;
-            document.getElementById('submitScoreArea').style.display = 'block';
+            const submitArea = document.getElementById('submitScoreArea');
+            submitArea.style.display = 'block';
             document.getElementById('rankModal').classList.add('show');
             lastScoreSubmitted = true;
+            // 清空错误信息
+            document.getElementById('submitError').textContent = '';
           }
         } else { respawnPlayer(); }
       }
+      
       playerScale = playerScale*0.9 + 1.0*0.1; landSquash *= 0.7; scorePop = Math.max(0, scorePop-1);
     }
     
@@ -347,7 +409,6 @@
       ctx.shadowBlur = 0; ctx.strokeStyle = '#fbe4ec'; ctx.lineWidth = 2.5; ctx.stroke();
     }
     
-    // 修改后的 drawPlayer：默认角色使用比例绘制，适应任意尺寸
     function drawPlayer(){
       const skin = getCurrentSkin();
       const cx = player.x + player.width/2, cy = player.y + player.height/2;
@@ -360,42 +421,25 @@
         ctx.shadowBlur = 20; ctx.shadowColor = '#f0b87b';
         ctx.drawImage(skin, player.x, player.y, player.width, player.height);
       } else {
-        // 默认角色：基于当前宽高比例绘制
         const w = player.width, h = player.height;
         const px = player.x, py = player.y;
-        
         ctx.shadowBlur = 22; ctx.shadowColor = '#f0b87b';
-        // 身体渐变
         const grad = ctx.createRadialGradient(px + w*0.2, py + h*0.2, 2, cx, cy, w*0.6);
         grad.addColorStop(0, '#f5d742');
         grad.addColorStop(1, '#d68b2c');
         ctx.fillStyle = grad;
         ctx.fillRect(px, py, w, h);
-        
-        // 眼睛 (黑色底)
         ctx.fillStyle = '#191e2b';
         const eyeSize = w * 0.18;
         const leftEyeX = px + w * 0.3;
         const rightEyeX = px + w * 0.7;
         const eyeY = py + h * 0.35;
-        ctx.beginPath();
-        ctx.arc(leftEyeX, eyeY, eyeSize, 0, 2*Math.PI);
-        ctx.fill();
-        ctx.beginPath();
-        ctx.arc(rightEyeX, eyeY, eyeSize, 0, 2*Math.PI);
-        ctx.fill();
-        
-        // 眼睛高光 (白色)
+        ctx.beginPath(); ctx.arc(leftEyeX, eyeY, eyeSize, 0, 2*Math.PI); ctx.fill();
+        ctx.beginPath(); ctx.arc(rightEyeX, eyeY, eyeSize, 0, 2*Math.PI); ctx.fill();
         ctx.fillStyle = '#f5f9ff';
         const highlightSize = w * 0.09;
-        ctx.beginPath();
-        ctx.arc(leftEyeX - w*0.03, eyeY - h*0.03, highlightSize, 0, 2*Math.PI);
-        ctx.fill();
-        ctx.beginPath();
-        ctx.arc(rightEyeX - w*0.03, eyeY - h*0.03, highlightSize, 0, 2*Math.PI);
-        ctx.fill();
-        
-        // 帽子 (小红帽)
+        ctx.beginPath(); ctx.arc(leftEyeX - w*0.03, eyeY - h*0.03, highlightSize, 0, 2*Math.PI); ctx.fill();
+        ctx.beginPath(); ctx.arc(rightEyeX - w*0.03, eyeY - h*0.03, highlightSize, 0, 2*Math.PI); ctx.fill();
         ctx.fillStyle = '#bd3b1b';
         ctx.shadowBlur = 12;
         ctx.fillRect(px - w*0.05, py - h*0.15, w*1.1, h*0.2);
@@ -442,10 +486,14 @@
       draw();
     }
     
-    // 排行榜功能
+    // 排行榜功能 (兼容未配置Firebase)
     async function fetchRankings() {
       const listEl = document.getElementById('rankList');
       listEl.innerHTML = '<li style="text-align:center;">加载中...</li>';
+      if (!firebaseReady || !db) {
+        listEl.innerHTML = '<li style="color:#ff8080;">Firebase 未配置</li><li style="font-size:0.8rem;">请替换代码中的 firebaseConfig</li>';
+        return;
+      }
       try {
         const snapshot = await db.collection('rankings').orderBy('score', 'desc').limit(10).get();
         listEl.innerHTML = '';
@@ -457,15 +505,31 @@
           li.innerHTML = `<span class="rank-name">${data.name || '匿名'}</span><span class="rank-score">${data.score}</span>`;
           listEl.appendChild(li);
         });
-      } catch(e) { listEl.innerHTML = '<li style="color:red;">加载失败</li>'; }
+      } catch(e) {
+        listEl.innerHTML = '<li style="color:red;">加载失败，请检查网络或Firestore规则</li>';
+      }
     }
+    
     async function submitScore(name, score) {
+      const errorEl = document.getElementById('submitError');
+      if (!firebaseReady || !db) {
+        errorEl.textContent = 'Firebase 未配置，无法提交';
+        return;
+      }
       if(!name || name.trim() === '') name = '玩家';
       try {
-        await db.collection('rankings').add({ name: name.substring(0,12), score: score, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
+        await db.collection('rankings').add({
+          name: name.substring(0,12),
+          score: score,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
         fetchRankings();
         document.getElementById('submitScoreArea').style.display = 'none';
-      } catch(e) { alert('提交失败，请检查网络'); }
+        errorEl.textContent = '';
+      } catch(e) {
+        errorEl.textContent = '提交失败，请检查Firestore安全规则';
+        console.error(e);
+      }
     }
     
     // 事件绑定
@@ -492,6 +556,7 @@
       el.addEventListener('touchstart', (e)=>{ e.preventDefault(); if(id==='touchLeft') left=true; if(id==='touchRight') right=true; if(id==='touchJump'){ up=true; space=true; } });
       el.addEventListener('touchend', (e)=>{ e.preventDefault(); if(id==='touchLeft') left=false; if(id==='touchRight') right=false; if(id==='touchJump'){ up=false; space=false; } });
     });
+    
     document.getElementById('restartButton').onclick=()=>{ enableAudio(); resetGame(); };
     document.getElementById('pauseButton').onclick=()=>{ if(gameActive){ paused=!paused; document.getElementById('pauseButton').textContent = paused?'▶️ 继续':'⏸️ 暂停'; } };
     
@@ -499,14 +564,23 @@
     document.getElementById('rankBtn').onclick = ()=>{
       modal.classList.add('show');
       fetchRankings();
-      document.getElementById('submitScoreArea').style.display = gameActive ? 'none' : (lastScoreSubmitted ? 'none' : 'block');
+      const submitArea = document.getElementById('submitScoreArea');
+      if(!gameActive && !lastScoreSubmitted) {
+        submitArea.style.display = 'block';
+        pendingScore = depth;
+      } else {
+        submitArea.style.display = 'none';
+      }
+      document.getElementById('submitError').textContent = '';
     };
     document.getElementById('closeRankModal').onclick = ()=> modal.classList.remove('show');
+    
     document.getElementById('submitScoreBtn').onclick = ()=>{
       const name = document.getElementById('nicknameInput').value;
       submitScore(name, pendingScore);
     };
     
+    // 设置抽屉事件 (保持不变)
     const drawer=document.getElementById('settingsDrawer'), overlay=document.getElementById('overlay');
     document.getElementById('settingsToggle').onclick=()=>{ drawer.classList.add('open'); overlay.classList.add('show'); };
     document.getElementById('closeDrawer').onclick=()=>{ drawer.classList.remove('open'); overlay.classList.remove('show'); };
@@ -518,7 +592,10 @@
       player.width = BASE_PLAYER_W; player.height = BASE_PLAYER_H;
       document.getElementById('sizeValue').textContent = e.target.value;
     };
-    document.getElementById('jumpSlider').oninput=e=>{ JUMP_FORCE=parseFloat(e.target.value); document.getElementById('jumpValue').textContent=JUMP_FORCE.toFixed(1); };
+    document.getElementById('jumpSlider').oninput=e=>{ 
+      JUMP_STRENGTH = parseFloat(e.target.value); 
+      document.getElementById('jumpValue').textContent = JUMP_STRENGTH.toFixed(1);
+    };
     document.getElementById('frictionSlider').oninput=e=>{ FRICTION_GROUND = parseFloat(e.target.value); document.getElementById('frictionValue').textContent = FRICTION_GROUND.toFixed(2); };
     document.getElementById('platformRateSlider').oninput=e=>{ platformSpawnRate=parseFloat(e.target.value); document.getElementById('platformRateVal').textContent=platformSpawnRate.toFixed(1); };
     document.getElementById('heartRateSlider').oninput=e=>{ heartSpawnProb=parseFloat(e.target.value); document.getElementById('heartRateVal').textContent=heartSpawnProb.toFixed(1); };
