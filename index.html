@@ -3,317 +3,81 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>🍰 甜品百层 · 帧率适配</title>
+  <title>🍰 甜品百层 · 完美边界</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      user-select: none;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    body {
-      background: #1e121c;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      font-family: 'Segoe UI', 'Poppins', system-ui, sans-serif;
-      padding: 0;
-      margin: 0;
-    }
-
-    .game-wrapper {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      width: 100%;
-      max-width: 780px;
-      height: 100vh;
-      max-height: 100vh;
-      padding: 6px 4px;
-      background: radial-gradient(circle at 30% 20%, #3b2535, #1e121c);
-    }
-
-    .hero-bar {
-      width: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 4px 4px;
-    }
-
-    .title-section {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      background: rgba(50, 25, 45, 0.8);
-      backdrop-filter: blur(8px);
-      padding: 5px 12px;
-      border-radius: 40px;
-      border: 1px solid #f9b7d0;
-      box-shadow: 0 3px 0 #2d1525;
-    }
+    /* 样式保持不变，此处省略以节省篇幅，与上一版本完全相同 */
+    * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+    body { background: #1e121c; display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: 'Segoe UI', 'Poppins', system-ui, sans-serif; padding: 0; margin: 0; }
+    .game-wrapper { display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 780px; height: 100vh; max-height: 100vh; padding: 6px 4px; background: radial-gradient(circle at 30% 20%, #3b2535, #1e121c); }
+    .hero-bar { width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 0 4px 4px; }
+    .title-section { display: flex; align-items: center; gap: 4px; background: rgba(50, 25, 45, 0.8); backdrop-filter: blur(8px); padding: 5px 12px; border-radius: 40px; border: 1px solid #f9b7d0; box-shadow: 0 3px 0 #2d1525; }
     .game-icon { font-size: 1.5rem; }
-    .game-title {
-      font-size: 1.3rem;
-      font-weight: 800;
-      background: linear-gradient(135deg, #ffe2f0, #ffb3c6);
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-    }
-
-    .stats-group {
-      display: flex;
-      gap: 5px;
-    }
-    .depth-panel, .lives-panel {
-      display: flex;
-      align-items: center;
-      background: #2d1a28;
-      border-radius: 30px;
-      padding: 4px 10px;
-      border: 1px solid #e598b0;
-      box-shadow: inset 0 1px 4px #000, 0 3px 0 #1e0f18;
-      gap: 4px;
-    }
+    .game-title { font-size: 1.3rem; font-weight: 800; background: linear-gradient(135deg, #ffe2f0, #ffb3c6); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .stats-group { display: flex; gap: 5px; }
+    .depth-panel, .lives-panel { display: flex; align-items: center; background: #2d1a28; border-radius: 30px; padding: 4px 10px; border: 1px solid #e598b0; box-shadow: inset 0 1px 4px #000, 0 3px 0 #1e0f18; gap: 4px; }
     .depth-number { font-size: 1.5rem; font-weight: 900; color: #ffe3b0; }
     .heart-icon { font-size: 1.3rem; }
     #livesCount { font-size: 1.3rem; font-weight: bold; color: #ffb0b0; }
-
-    .canvas-container {
-      position: relative;
-      border-radius: 20px;
-      overflow: hidden;
-      box-shadow: 0 15px 25px #00000080, 0 0 0 3px #8f5e7a;
-      width: 100%;
-      flex: 1;
-      min-height: 0;
-      display: flex;
-    }
-    #gameCanvas {
-      display: block;
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      background: #1e1320;
-      cursor: pointer;
-      outline: none;
-      touch-action: none;
-    }
-
-    .action-bar {
-      margin-top: 6px;
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-    }
-    .btn {
-      background: #3f2a3a;
-      border: none;
-      border-bottom: 4px solid #25161f;
-      color: #fde3ef;
-      font-weight: bold;
-      font-size: 1rem;
-      padding: 8px 14px;
-      min-width: 90px;
-      border-radius: 40px;
-      box-shadow: 0 4px 0 #1a0f16, 0 5px 10px #00000050;
-      transition: 0.05s;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
-    }
+    .canvas-container { position: relative; border-radius: 20px; overflow: hidden; box-shadow: 0 15px 25px #00000080, 0 0 0 3px #8f5e7a; width: 100%; flex: 1; min-height: 0; display: flex; }
+    #gameCanvas { display: block; width: 100%; height: 100%; object-fit: contain; background: #1e1320; cursor: pointer; outline: none; touch-action: none; }
+    .action-bar { margin-top: 6px; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; }
+    .btn { background: #3f2a3a; border: none; border-bottom: 4px solid #25161f; color: #fde3ef; font-weight: bold; font-size: 1rem; padding: 8px 14px; min-width: 90px; border-radius: 40px; box-shadow: 0 4px 0 #1a0f16, 0 5px 10px #00000050; transition: 0.05s; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 4px; }
     .btn.small { padding: 7px 12px; min-width: 70px; }
     .btn:active { transform: translateY(4px); border-bottom-width: 1px; }
-
-    .touch-controls {
-      display: flex;
-      justify-content: center;
-      gap: 20px;
-      margin: 8px 0 2px;
-    }
-    .touch-btn {
-      background: #5a3e55;
-      border: none;
-      border-bottom: 5px solid #2f1e2a;
-      color: white;
-      font-size: 2rem;
-      width: 75px;
-      height: 75px;
-      border-radius: 50%;
-      box-shadow: 0 6px 0 #22161f, 0 8px 16px black;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: 0.05s;
-      touch-action: manipulation;
-    }
+    .touch-controls { display: flex; justify-content: center; gap: 20px; margin: 8px 0 2px; }
+    .touch-btn { background: #5a3e55; border: none; border-bottom: 5px solid #2f1e2a; color: white; font-size: 2rem; width: 75px; height: 75px; border-radius: 50%; box-shadow: 0 6px 0 #22161f, 0 8px 16px black; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.05s; touch-action: manipulation; }
     .touch-btn.jump { background: #b85c7a; border-bottom-color: #6e344a; }
     .touch-btn:active { transform: translateY(5px); box-shadow: 0 1px 0 #22161f, 0 6px 12px black; }
-
-    .hint-text {
-      color: #dbb0c0;
-      font-size: 0.75rem;
-      margin-top: 2px;
-    }
-
-    /* 设置抽屉 */
-    .settings-drawer {
-      position: fixed;
-      top: 0; right: 0;
-      width: 300px;
-      max-width: 85vw;
-      height: 100vh;
-      background: #2f1d2bf0;
-      backdrop-filter: blur(20px);
-      box-shadow: -8px 0 30px #00000060;
-      border-left: 2px solid #e598b0;
-      padding: 20px 16px;
-      transform: translateX(100%);
-      transition: transform 0.25s;
-      z-index: 1000;
-      overflow-y: auto;
-      color: #fde3ef;
-    }
+    .hint-text { color: #dbb0c0; font-size: 0.75rem; margin-top: 2px; }
+    .settings-drawer { position: fixed; top: 0; right: 0; width: 300px; max-width: 85vw; height: 100vh; background: #2f1d2bf0; backdrop-filter: blur(20px); box-shadow: -8px 0 30px #00000060; border-left: 2px solid #e598b0; padding: 20px 16px; transform: translateX(100%); transition: transform 0.25s; z-index: 1000; overflow-y: auto; color: #fde3ef; }
     .settings-drawer.open { transform: translateX(0); }
-    .drawer-header {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 20px;
-      font-size: 1.5rem;
-    }
-    .close-btn {
-      background: none; border: none; color: #ffc0d0; font-size: 2rem; cursor: pointer;
-    }
-    .setting-item {
-      margin-bottom: 20px;
-    }
-    .setting-item label {
-      display: block; margin-bottom: 5px; font-weight: 600;
-    }
-    select, input[type="range"] {
-      width: 100%; padding: 8px; background: #3f2638; border: 1px solid #d99fb8;
-      border-radius: 30px; color: white; font-size: 1rem;
-    }
-    .upload-area {
-      display: flex; gap: 8px; flex-wrap: wrap;
-    }
-    .overlay {
-      position: fixed; top:0; left:0; width:100%; height:100%;
-      background: #00000060; z-index: 999; display: none;
-    }
+    .drawer-header { display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 1.5rem; }
+    .close-btn { background: none; border: none; color: #ffc0d0; font-size: 2rem; cursor: pointer; }
+    .setting-item { margin-bottom: 20px; }
+    .setting-item label { display: block; margin-bottom: 5px; font-weight: 600; }
+    select, input[type="range"] { width: 100%; padding: 8px; background: #3f2638; border: 1px solid #d99fb8; border-radius: 30px; color: white; font-size: 1rem; }
+    .upload-area { display: flex; gap: 8px; flex-wrap: wrap; }
+    .overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: #00000060; z-index: 999; display: none; }
     .overlay.show { display: block; }
-    .checkbox-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .checkbox-item input {
-      width: 20px; height: 20px;
-    }
-
-    @media (min-width: 768px) {
-      .touch-controls { display: none; }
-      .game-wrapper { padding: 8px; }
-    }
-    @media (max-width: 480px) {
-      .btn { font-size: 0.9rem; padding: 6px 10px; }
-    }
+    .checkbox-item { display: flex; align-items: center; gap: 10px; }
+    .checkbox-item input { width: 20px; height: 20px; }
+    @media (min-width: 768px) { .touch-controls { display: none; } .game-wrapper { padding: 8px; } }
+    @media (max-width: 480px) { .btn { font-size: 0.9rem; padding: 6px 10px; } }
   </style>
 </head>
 <body>
 <div class="game-wrapper">
   <div class="hero-bar">
-    <div class="title-section">
-      <span class="game-icon">🍭</span>
-      <span class="game-title">甜品·帧率适配</span>
-    </div>
+    <div class="title-section"><span class="game-icon">🍭</span><span class="game-title">甜品·边界修正</span></div>
     <div class="stats-group">
-      <div class="depth-panel">
-        <span>📉</span>
-        <span class="depth-number" id="depthDisplay">000</span>
-      </div>
-      <div class="lives-panel">
-        <span class="heart-icon">❤️</span>
-        <span id="livesCount">3</span>
-      </div>
+      <div class="depth-panel"><span>📉</span><span class="depth-number" id="depthDisplay">000</span></div>
+      <div class="lives-panel"><span class="heart-icon">❤️</span><span id="livesCount">3</span></div>
     </div>
   </div>
-
-  <div class="canvas-container">
-    <canvas id="gameCanvas" width="700" height="800" tabindex="0"></canvas>
-  </div>
-
+  <div class="canvas-container"><canvas id="gameCanvas" width="700" height="800" tabindex="0"></canvas></div>
   <div class="action-bar">
     <button class="btn" id="restartButton">🔄 重开</button>
     <button class="btn small" id="pauseButton">⏸️ 暂停</button>
     <button class="btn small" id="settingsToggle">⚙️ 设置</button>
   </div>
-
   <div class="touch-controls">
     <button class="touch-btn" id="touchLeft">←</button>
     <button class="touch-btn jump" id="touchJump">↑</button>
     <button class="touch-btn" id="touchRight">→</button>
   </div>
-  <div class="hint-text">← → 移动 · 拾❤回血 · 高刷已适配</div>
+  <div class="hint-text">← → 移动 · 拾❤回血 · 装饰点已内敛</div>
 </div>
-
-<!-- 遮罩 + 设置抽屉 -->
 <div class="overlay" id="overlay"></div>
 <div class="settings-drawer" id="settingsDrawer">
-  <div class="drawer-header">
-    <span>⚙️ 设置</span>
-    <button class="close-btn" id="closeDrawer">&times;</button>
-  </div>
-  <div class="setting-item">
-    <label>⌨️ 键位</label>
-    <select id="keyPresetSelect">
-      <option value="arrows" selected>方向键</option>
-      <option value="wasd">WASD</option>
-      <option value="ijkl">IJKL</option>
-    </select>
-  </div>
-  <div class="setting-item">
-    <label>⏸️ 暂停键</label>
-    <select id="pauseKeySelect">
-      <option value="KeyP" selected>P</option>
-      <option value="Escape">Esc</option>
-      <option value="KeyQ">Q</option>
-    </select>
-  </div>
-  <div class="setting-item">
-    <label>📏 角色大小 <span id="sizeValue">45</span></label>
-    <input type="range" id="sizeSlider" min="30" max="80" value="45" step="1">
-  </div>
-  <div class="setting-item">
-    <label>🦘 跳跃力度 <span id="jumpValue">-7.2</span></label>
-    <input type="range" id="jumpSlider" min="-10.0" max="-4.5" value="-7.2" step="0.1">
-  </div>
-  <div class="setting-item">
-    <label>🧊 平滑度 (摩擦力) <span id="frictionValue">0.88</span></label>
-    <input type="range" id="frictionSlider" min="0.70" max="0.98" value="0.88" step="0.01">
-    <small>数值越小越滑(像冰块)</small>
-  </div>
-  <div class="setting-item">
-    <label>🍰 平台生成速度 <span id="platformRateVal">1.0</span></label>
-    <input type="range" id="platformRateSlider" min="0.5" max="2.0" value="1.0" step="0.1">
-  </div>
-  <div class="setting-item">
-    <label>❤️ 心心出现概率 <span id="heartRateVal">0.8</span></label>
-    <input type="range" id="heartRateSlider" min="0.0" max="2.5" value="0.8" step="0.1">
-  </div>
-  <div class="setting-item checkbox-item">
-    <label>🔊 音效开关</label>
-    <input type="checkbox" id="soundToggle" checked>
-  </div>
+  <div class="drawer-header"><span>⚙️ 设置</span><button class="close-btn" id="closeDrawer">&times;</button></div>
+  <div class="setting-item"><label>⌨️ 键位</label><select id="keyPresetSelect"><option value="arrows" selected>方向键</option><option value="wasd">WASD</option><option value="ijkl">IJKL</option></select></div>
+  <div class="setting-item"><label>⏸️ 暂停键</label><select id="pauseKeySelect"><option value="KeyP" selected>P</option><option value="Escape">Esc</option><option value="KeyQ">Q</option></select></div>
+  <div class="setting-item"><label>📏 角色大小 <span id="sizeValue">45</span></label><input type="range" id="sizeSlider" min="30" max="80" value="45" step="1"></div>
+  <div class="setting-item"><label>🦘 跳跃力度 <span id="jumpValue">-7.2</span></label><input type="range" id="jumpSlider" min="-10.0" max="-4.5" value="-7.2" step="0.1"></div>
+  <div class="setting-item"><label>🧊 平滑度 (摩擦力) <span id="frictionValue">0.88</span></label><input type="range" id="frictionSlider" min="0.70" max="0.98" value="0.88" step="0.01"></div>
+  <div class="setting-item"><label>🍰 平台生成速度 <span id="platformRateVal">1.0</span></label><input type="range" id="platformRateSlider" min="0.5" max="2.0" value="1.0" step="0.1"></div>
+  <div class="setting-item"><label>❤️ 心心出现概率 <span id="heartRateVal">0.8</span></label><input type="range" id="heartRateSlider" min="0.0" max="2.5" value="0.8" step="0.1"></div>
+  <div class="setting-item checkbox-item"><label>🔊 音效开关</label><input type="checkbox" id="soundToggle" checked></div>
   <div class="setting-item">
     <label>🖼️ 状态皮肤</label>
     <div class="upload-area">
@@ -325,20 +89,12 @@
     <input type="file" id="skinUpload" accept="image/*" style="display:none;">
     <button class="btn small" id="resetAllSkins" style="margin-top:8px;">还原默认</button>
   </div>
-  <div class="setting-item">
-    <label>🌸 主题</label>
-    <select id="themeSelect">
-      <option value="default" selected>粉樱</option>
-      <option value="forest">薄荷</option>
-      <option value="lava">浆果</option>
-    </select>
-  </div>
+  <div class="setting-item"><label>🌸 主题</label><select id="themeSelect"><option value="default" selected>粉樱</option><option value="forest">薄荷</option><option value="lava">浆果</option></select></div>
 </div>
 
 <script>
   (function(){
     "use strict";
-    // ---------- 画布 ----------
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     const depthSpan = document.getElementById('depthDisplay');
@@ -354,57 +110,27 @@
       this.lineTo(x,y+r); this.quadraticCurveTo(x,y,x+r,y); return this;
     };
 
-    // ---------- 固定时间步长 (帧率适配) ----------
-    const FIXED_TIMESTEP = 1000 / 60; // 目标60fps，每帧16.67ms
-    let lastTimestamp = 0;
-    let accumulator = 0;
-
-    // ---------- 参数 (所有速度值均已针对60fps校准) ----------
-    let BASE_PLAYER_W = 45, BASE_PLAYER_H = 45;
-    let JUMP_FORCE = -7.2;
-    const GRAVITY = 0.48;
-    const FRICTION_AIR = 0.80;
+    const FIXED_TIMESTEP = 1000 / 60;
+    let lastTimestamp = 0, accumulator = 0;
+    let BASE_PLAYER_W = 45, BASE_PLAYER_H = 45, JUMP_FORCE = -7.2;
+    const GRAVITY = 0.48, FRICTION_AIR = 0.80, ACCEL = 0.9, MAX_SPEED_X = 6.8;
     let FRICTION_GROUND = 0.88;
-    const ACCEL = 0.9, MAX_SPEED_X = 6.8;
-    const PLATFORM_H = 14, PLATFORM_SPEED = 2.5;
-    const MIN_PLAT_W = 70, MAX_PLAT_W = 125;
-    const MAX_PLATFORMS = 22;
-    const MAX_LIVES = 3;
+    const PLATFORM_H = 14, PLATFORM_SPEED = 2.5, MIN_PLAT_W = 70, MAX_PLAT_W = 125, MAX_PLATFORMS = 22, MAX_LIVES = 3;
     
-    let lives = 3;
-    let invulnerable = false, invulnerableTimer = 0;
-    let gameActive = false, paused = false;
-    let depth = 0;
-    
+    let lives = 3, invulnerable = false, invulnerableTimer = 0, gameActive = false, paused = false, depth = 0;
     let player = { x:0, y:0, vx:0, vy:0, width:BASE_PLAYER_W, height:BASE_PLAYER_H, isGrounded:false, jumpPressed:false };
-    let platforms = [], powerups = [];
-    let generateCooldown = 0;
-    
-    let platformSpawnRate = 1.0;
-    let heartSpawnProb = 0.8;
-    
+    let platforms = [], powerups = [], generateCooldown = 0;
+    let platformSpawnRate = 1.0, heartSpawnProb = 0.8;
     let left = false, right = false, up = false, space = false;
     
     const keyMap = { left:'ArrowLeft', right:'ArrowRight', jump1:'ArrowUp', jump2:'Space' };
-    const presets = {
-      arrows:  { left:'ArrowLeft', right:'ArrowRight', jump1:'ArrowUp', jump2:'Space' },
-      wasd:    { left:'KeyA', right:'KeyD', jump1:'KeyW', jump2:'Space' },
-      ijkl:    { left:'KeyJ', right:'KeyL', jump1:'KeyI', jump2:'Space' },
-    };
+    const presets = { arrows: { left:'ArrowLeft', right:'ArrowRight', jump1:'ArrowUp', jump2:'Space' }, wasd: { left:'KeyA', right:'KeyD', jump1:'KeyW', jump2:'Space' }, ijkl: { left:'KeyJ', right:'KeyL', jump1:'KeyI', jump2:'Space' } };
     let pauseKeyCode = 'KeyP';
-    
-    let skin3 = null, skin2 = null, skin1 = null, skinGameover = null;
-    let currentTheme = 0;
-    
+    let skin3 = null, skin2 = null, skin1 = null, skinGameover = null, currentTheme = 0;
     let playerScale = 1.0, landSquash = 0, scorePop = 0, lastDepth = 0;
+    let soundEnabled = true, audioCtx = null;
     
-    // 音效开关
-    let soundEnabled = true;
-    let audioCtx = null;
-    
-    function initAudio(){ 
-      if(!audioCtx) try{ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); audioCtx.resume(); } catch(e){} 
-    }
+    function initAudio(){ if(!audioCtx) try{ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); audioCtx.resume(); } catch(e){} }
     function playSound(t){ 
       if(!soundEnabled || !audioCtx || audioCtx.state!=='running') return; 
       const now=audioCtx.currentTime; const o=audioCtx.createOscillator(), g=audioCtx.createGain(); 
@@ -418,74 +144,45 @@
       g.gain.setValueAtTime(v,now); g.gain.exponentialRampToValueAtTime(0.01,now+d); 
       o.frequency.value=f; o.start(); o.stop(now+d); 
     }
-    function enableAudio(){ 
-      initAudio(); 
-      if(audioCtx?.state==='suspended') audioCtx.resume(); 
-    }
-    
-    function updateUI(){ 
-      depthSpan.textContent = String(Math.min(999,Math.floor(depth))).padStart(3,'0'); 
-      livesSpan.textContent = lives; 
-    }
-    
+    function enableAudio(){ initAudio(); if(audioCtx?.state==='suspended') audioCtx.resume(); }
+    function updateUI(){ depthSpan.textContent = String(Math.min(999,Math.floor(depth))).padStart(3,'0'); livesSpan.textContent = lives; }
     function respawnPlayer(){
       player.x = Math.min(W - player.width - 10, Math.max(10, W/2 - player.width/2));
-      player.y = 30;
-      player.vx = 0; player.vy = 0;
+      player.y = 30; player.vx = 0; player.vy = 0;
       invulnerable = true; invulnerableTimer = 80;
     }
-    
     function resetGame(){
-      gameActive = true; paused = false;
-      document.getElementById('pauseButton').textContent = '⏸️ 暂停';
-      lives = 3; depth = 0; lastDepth = 0;
-      updateUI();
+      gameActive = true; paused = false; document.getElementById('pauseButton').textContent = '⏸️ 暂停';
+      lives = 3; depth = 0; lastDepth = 0; updateUI();
       player.width = BASE_PLAYER_W; player.height = BASE_PLAYER_H;
-      player.x = W/2 - player.width/2; player.y = 340;
-      player.vx = 0; player.vy = 0; player.isGrounded = false;
-      invulnerable = false; invulnerableTimer = 0;
-      playerScale=1; landSquash=0;
+      player.x = W/2 - player.width/2; player.y = 340; player.vx = 0; player.vy = 0; player.isGrounded = false;
+      invulnerable = false; invulnerableTimer = 0; playerScale=1; landSquash=0;
       platforms = []; powerups = [];
       const baseY = H-70;
       platforms.push({ x:W/2-80, y:baseY, w:130, h:PLATFORM_H, counted:false, dessertType:0 });
       platforms.push({ x:130, y:baseY-80, w:100, h:PLATFORM_H, counted:false, dessertType:1 });
       platforms.push({ x:430, y:baseY-150, w:110, h:PLATFORM_H, counted:false, dessertType:2 });
       for(let i=0;i<4;i++) platforms.push({ x:30+Math.random()*(W-150), y:150+Math.random()*250, w:70+Math.floor(Math.random()*55), h:PLATFORM_H, counted:false, dessertType: Math.floor(Math.random()*5) });
-      generateCooldown=10;
-      left=right=up=space=false;
-      playSound('click');
+      generateCooldown=10; left=right=up=space=false; playSound('click');
     }
-    
     function spawnPlatform(){
       if(!gameActive||paused||platforms.length>=MAX_PLATFORMS) return;
       const w = MIN_PLAT_W + Math.floor(Math.random()*(MAX_PLAT_W-MIN_PLAT_W));
       platforms.push({ x:10+Math.random()*(W-w-20), y:H+10+Math.random()*30, w, h:PLATFORM_H, counted:false, dessertType: Math.floor(Math.random()*5) });
     }
-    
-    // 物理更新 (每一帧调用一次，代表 FIXED_TIMESTEP 的时间流逝)
     function fixedUpdate() {
       if(!gameActive||paused) return;
       if(invulnerable){ invulnerableTimer--; if(invulnerableTimer<=0) invulnerable=false; }
-      
       if(left) player.vx -= ACCEL;
       if(right) player.vx += ACCEL;
       player.vx *= (player.isGrounded ? FRICTION_GROUND : FRICTION_AIR);
       if(Math.abs(player.vx)<0.15) player.vx=0;
       player.vx = Math.min(MAX_SPEED_X, Math.max(-MAX_SPEED_X, player.vx));
-      
-      player.vy += GRAVITY;
-      if(player.vy>13) player.vy=13;
-      
-      if((up||space) && player.isGrounded && !player.jumpPressed) {
-        player.vy = JUMP_FORCE; player.isGrounded = false; player.jumpPressed = true;
-        playerScale = 1.25; playSound('jump');
-      }
+      player.vy += GRAVITY; if(player.vy>13) player.vy=13;
+      if((up||space) && player.isGrounded && !player.jumpPressed) { player.vy = JUMP_FORCE; player.isGrounded = false; player.jumpPressed = true; playerScale = 1.25; playSound('jump'); }
       if(!up && !space) player.jumpPressed = false;
-      
-      player.x += player.vx;
-      player.x = Math.max(0, Math.min(W - player.width, player.x));
+      player.x += player.vx; player.x = Math.max(0, Math.min(W - player.width, player.x));
       player.y += player.vy;
-      
       let grounded = false;
       for(let iter=0; iter<6; iter++) {
         for(let pl of platforms) {
@@ -495,19 +192,15 @@
           }
         }
       }
-      
       const wasGrounded = player.isGrounded;
       player.isGrounded = grounded;
       if(!wasGrounded && grounded) { landSquash=8; playerScale=0.85; playSound('land'); }
-      
       for(let pl of platforms) pl.y -= PLATFORM_SPEED;
       for(let pw of powerups) pw.y -= PLATFORM_SPEED;
-      
       platforms = platforms.filter(pl => {
         if(pl.y+pl.h < 0) { if(!pl.counted) { pl.counted=true; depth++; if(depth>lastDepth){ scorePop=12; playSound('score'); } lastDepth=depth; updateUI(); } return false; }
         return true;
       });
-      
       powerups = powerups.filter(pw => {
         if(pw.y + pw.h < 0) return false;
         if(player.x < pw.x+pw.w && player.x+player.width > pw.x && player.y < pw.y+pw.h && player.y+player.height > pw.y) {
@@ -516,37 +209,27 @@
         }
         return true;
       });
-      
       if(gameActive && !paused) {
         let baseCooldown = Math.max(16, 34 - Math.floor(depth/18));
         baseCooldown = Math.max(12, baseCooldown / platformSpawnRate);
         if(generateCooldown<=0) { spawnPlatform(); generateCooldown = Math.floor(baseCooldown); }
         else generateCooldown--;
-        
-        if(Math.random() < 0.008 * heartSpawnProb && powerups.length < 5) {
-          powerups.push({ x:20+Math.random()*(W-60), y:H+20, w:24, h:24 });
-        }
+        if(Math.random() < 0.008 * heartSpawnProb && powerups.length < 5) { powerups.push({ x:20+Math.random()*(W-60), y:H+20, w:24, h:24 }); }
       }
-      
       if(gameActive && !invulnerable && (player.y+player.height >= H || player.y <= 0)) {
         lives--; updateUI(); playSound('gameover');
         if(lives <= 0) { gameActive = false; }
         else { respawnPlayer(); }
       }
-      
-      playerScale = playerScale*0.9 + 1.0*0.1;
-      landSquash *= 0.7;
-      scorePop = Math.max(0, scorePop-1);
+      playerScale = playerScale*0.9 + 1.0*0.1; landSquash *= 0.7; scorePop = Math.max(0, scorePop-1);
     }
-    
     function getCurrentSkin() {
       if(!gameActive && skinGameover) return skinGameover;
-      if(lives === 3) return skin3;
-      if(lives === 2) return skin2;
-      if(lives === 1) return skin1;
+      if(lives === 3) return skin3; if(lives === 2) return skin2; if(lives === 1) return skin1;
       return null;
     }
     
+    // 修复版甜品平台绘制：所有装饰点严格限制在平台内部
     function drawDessertPlatform(pl) {
       const type = pl.dessertType || 0;
       let baseColor, lightColor, darkColor;
@@ -557,52 +240,46 @@
       else { baseColor = '#f2d0d6'; lightColor = '#ffe9ee'; darkColor = '#d49aaa'; }
       
       const grad = ctx.createLinearGradient(pl.x, pl.y, pl.x + pl.w, pl.y + pl.h);
-      grad.addColorStop(0, lightColor);
-      grad.addColorStop(0.5, baseColor);
-      grad.addColorStop(1, darkColor);
+      grad.addColorStop(0, lightColor); grad.addColorStop(0.5, baseColor); grad.addColorStop(1, darkColor);
+      ctx.fillStyle = grad; ctx.shadowBlur = 14; ctx.shadowColor = '#ffb0c0';
+      ctx.beginPath(); ctx.roundRect(pl.x, pl.y, pl.w, pl.h, 10); ctx.fill();
       
-      ctx.fillStyle = grad;
-      ctx.shadowBlur = 14;
-      ctx.shadowColor = '#ffb0c0';
-      ctx.beginPath();
-      ctx.roundRect(pl.x, pl.y, pl.w, pl.h, 10);
-      ctx.fill();
-      
-      ctx.shadowBlur = 8;
-      ctx.fillStyle = '#ffffff60';
-      ctx.beginPath();
-      ctx.roundRect(pl.x + 2, pl.y - 1, pl.w - 4, 5, 4);
-      ctx.fill();
+      ctx.shadowBlur = 8; ctx.fillStyle = '#ffffff60';
+      ctx.beginPath(); ctx.roundRect(pl.x + 2, pl.y - 1, pl.w - 4, 5, 4); ctx.fill();
       
       ctx.shadowBlur = 4;
-      ctx.fillStyle = '#5a3a2e';
-      for (let i = 0; i < pl.w; i += 20) {
+      // 巧克力碎：确保绘制在内部，限制步长并检查边界
+      const chocoSize = 3;
+      for (let i = 8; i < pl.w - 8; i += 20) {
+        let x = pl.x + i;
+        if (x + chocoSize > pl.x + pl.w) x = pl.x + pl.w - chocoSize - 2;
+        if (x < pl.x + 2) x = pl.x + 2;
         ctx.beginPath();
-        ctx.arc(pl.x + i + 8 + Math.sin(i)*3, pl.y + 8, 3, 0, 2*Math.PI);
+        ctx.arc(x, pl.y + 8, chocoSize, 0, 2*Math.PI);
         ctx.fillStyle = '#4d2f24';
         ctx.fill();
       }
-      ctx.fillStyle = '#fff9f0';
-      for (let i = 0; i < pl.w; i += 25) {
+      // 白色糖粒：同样确保边界
+      const sugarSize = 2.5;
+      for (let i = 12; i < pl.w - 8; i += 25) {
+        let x = pl.x + i;
+        if (x + sugarSize > pl.x + pl.w) x = pl.x + pl.w - sugarSize - 2;
+        if (x < pl.x + 2) x = pl.x + 2;
         ctx.beginPath();
-        ctx.arc(pl.x + i + 12, pl.y + 5, 2.5, 0, 2*Math.PI);
+        ctx.arc(x, pl.y + 5, sugarSize, 0, 2*Math.PI);
+        ctx.fillStyle = '#fff9f0';
         ctx.fill();
       }
       
-      ctx.shadowBlur = 0;
-      ctx.strokeStyle = '#fbe4ec';
-      ctx.lineWidth = 2.5;
-      ctx.stroke();
+      ctx.shadowBlur = 0; ctx.strokeStyle = '#fbe4ec'; ctx.lineWidth = 2.5; ctx.stroke();
     }
     
     function drawPlayer(){
       const skin = getCurrentSkin();
       const cx=player.x+player.width/2, cy=player.y+player.height/2;
       ctx.save(); ctx.translate(cx,cy); ctx.scale(playerScale, playerScale*(1-landSquash*0.02)); ctx.translate(-cx,-cy);
-      if(skin && skin.complete) {
-        ctx.shadowBlur=20; ctx.shadowColor='#f0b87b';
-        ctx.drawImage(skin, player.x, player.y, player.width, player.height);
-      } else {
+      if(skin && skin.complete) { ctx.shadowBlur=20; ctx.shadowColor='#f0b87b'; ctx.drawImage(skin, player.x, player.y, player.width, player.height); }
+      else {
         ctx.shadowBlur=22; ctx.shadowColor='#f0b87b';
         const g=ctx.createRadialGradient(player.x+5,player.y+5,3,cx,cy,18); g.addColorStop(0,'#f5d742'); g.addColorStop(1,'#d68b2c');
         ctx.fillStyle=g; ctx.fillRect(player.x,player.y,player.width,player.height);
@@ -617,9 +294,7 @@
       else if(currentTheme===1){ grad.addColorStop(0,'#1a3a32'); grad.addColorStop(0.7,'#2a5a48'); }
       else { grad.addColorStop(0,'#3d1e22'); grad.addColorStop(0.6,'#752e38'); }
       ctx.fillStyle = grad; ctx.fillRect(0,0,W,H);
-      
       for(let pl of platforms) drawDessertPlatform(pl);
-      
       for(let pw of powerups) {
         ctx.save(); ctx.translate(pw.x+pw.w/2, pw.y+pw.h/2); ctx.scale(0.8,0.8);
         ctx.fillStyle = '#ff4d6d'; ctx.shadowBlur=20; ctx.shadowColor='#ffb0b0';
@@ -628,55 +303,30 @@
         ctx.bezierCurveTo(pw.w, pw.h/5, pw.w/2, -pw.h/1.5, 0, -pw.h/2.5);
         ctx.fill(); ctx.restore();
       }
-      
       if(invulnerable && (Math.floor(Date.now()/100)%2)) {} else drawPlayer();
-      
       ctx.font='bold 32px Poppins'; ctx.fillStyle='#fce5f0'; ctx.fillText(`🍰 ${Math.floor(depth)}`,20,70);
       if(!gameActive) {
         ctx.fillStyle = '#1a0f16cc'; ctx.fillRect(0,0,W,H);
-        if(skinGameover?.complete) {
-          let imgSize = 300;
-          ctx.drawImage(skinGameover, W/2 - imgSize/2, H/2 - imgSize/2, imgSize, imgSize);
-        } else {
-          ctx.font='bold 48px Segoe UI'; ctx.fillStyle='#ffc0d0'; ctx.textAlign='center';
-          ctx.fillText('💔 游戏结束',W/2,H/2);
-        }
+        if(skinGameover?.complete) { let imgSize = 300; ctx.drawImage(skinGameover, W/2 - imgSize/2, H/2 - imgSize/2, imgSize, imgSize); }
+        else { ctx.font='bold 48px Segoe UI'; ctx.fillStyle='#ffc0d0'; ctx.textAlign='center'; ctx.fillText('💔 游戏结束',W/2,H/2); }
       } else if(paused) {
         ctx.fillStyle = '#2a1a28cc'; ctx.fillRect(0,0,W,H);
-        ctx.font='bold 48px Segoe UI'; ctx.fillStyle='#ffe0f0'; ctx.textAlign='center';
-        ctx.fillText('⏸ 暂停',W/2,H/2);
+        ctx.font='bold 48px Segoe UI'; ctx.fillStyle='#ffe0f0'; ctx.textAlign='center'; ctx.fillText('⏸ 暂停',W/2,H/2);
       }
       ctx.textAlign='left';
     }
     
-    // 游戏主循环 (带固定时间步长)
     function gameLoop(now) {
       requestAnimationFrame(gameLoop);
-      
-      if (!lastTimestamp) {
-        lastTimestamp = now;
-        return;
-      }
-      
-      let deltaTime = now - lastTimestamp;
-      lastTimestamp = now;
-      
-      // 限制最大单次流逝时间 (避免标签页切换后delta过大)
+      if (!lastTimestamp) { lastTimestamp = now; return; }
+      let deltaTime = now - lastTimestamp; lastTimestamp = now;
       if (deltaTime > 100) deltaTime = 100;
-      
       accumulator += deltaTime;
-      
-      // 固定更新物理，直到追赶上当前时间
-      while (accumulator >= FIXED_TIMESTEP) {
-        fixedUpdate();
-        accumulator -= FIXED_TIMESTEP;
-      }
-      
-      // 渲染 (每一帧都绘制，保证流畅)
+      while (accumulator >= FIXED_TIMESTEP) { fixedUpdate(); accumulator -= FIXED_TIMESTEP; }
       draw();
     }
     
-    // 事件绑定
+    // 事件监听（与之前相同，此处略作精简，但保留全部功能）
     function handleKeyDown(e){
       enableAudio();
       if(e.code === pauseKeyCode) { e.preventDefault(); if(gameActive){ paused=!paused; document.getElementById('pauseButton').textContent = paused?'▶️ 继续':'⏸️ 暂停'; } return; }
@@ -695,70 +345,43 @@
       if(e.code===keyMap.jump2) { space=false; e.preventDefault(); }
     }
     window.addEventListener('keydown', handleKeyDown); window.addEventListener('keyup', handleKeyUp);
-    
-    // 触摸
     ['touchLeft','touchRight','touchJump'].forEach(id=>{
       const el=document.getElementById(id); if(!el) return;
       el.addEventListener('touchstart', (e)=>{ e.preventDefault(); if(id==='touchLeft') left=true; if(id==='touchRight') right=true; if(id==='touchJump'){ up=true; space=true; } });
       el.addEventListener('touchend', (e)=>{ e.preventDefault(); if(id==='touchLeft') left=false; if(id==='touchRight') right=false; if(id==='touchJump'){ up=false; space=false; } });
     });
-    
     document.getElementById('restartButton').onclick=()=>{ enableAudio(); resetGame(); };
     document.getElementById('pauseButton').onclick=()=>{ if(gameActive){ paused=!paused; document.getElementById('pauseButton').textContent = paused?'▶️ 继续':'⏸️ 暂停'; } };
-    
-    // 抽屉
     const drawer=document.getElementById('settingsDrawer'), overlay=document.getElementById('overlay');
     document.getElementById('settingsToggle').onclick=()=>{ drawer.classList.add('open'); overlay.classList.add('show'); };
     document.getElementById('closeDrawer').onclick=()=>{ drawer.classList.remove('open'); overlay.classList.remove('show'); };
     overlay.onclick=()=>{ drawer.classList.remove('open'); overlay.classList.remove('show'); };
-    
     document.getElementById('keyPresetSelect').onchange=e=>{ Object.assign(keyMap, presets[e.target.value]); };
     document.getElementById('pauseKeySelect').onchange=e=>{ pauseKeyCode = e.target.value; };
-    document.getElementById('sizeSlider').oninput=e=>{ 
-      BASE_PLAYER_W = BASE_PLAYER_H = parseInt(e.target.value); 
-      player.width = BASE_PLAYER_W; player.height = BASE_PLAYER_H;
-      document.getElementById('sizeValue').textContent = e.target.value;
-    };
+    document.getElementById('sizeSlider').oninput=e=>{ BASE_PLAYER_W = BASE_PLAYER_H = parseInt(e.target.value); player.width = BASE_PLAYER_W; player.height = BASE_PLAYER_H; document.getElementById('sizeValue').textContent = e.target.value; };
     document.getElementById('jumpSlider').oninput=e=>{ JUMP_FORCE=parseFloat(e.target.value); document.getElementById('jumpValue').textContent=JUMP_FORCE.toFixed(1); };
-    document.getElementById('frictionSlider').oninput=e=>{ 
-      FRICTION_GROUND = parseFloat(e.target.value); 
-      document.getElementById('frictionValue').textContent = FRICTION_GROUND.toFixed(2);
-    };
+    document.getElementById('frictionSlider').oninput=e=>{ FRICTION_GROUND = parseFloat(e.target.value); document.getElementById('frictionValue').textContent = FRICTION_GROUND.toFixed(2); };
     document.getElementById('platformRateSlider').oninput=e=>{ platformSpawnRate=parseFloat(e.target.value); document.getElementById('platformRateVal').textContent=platformSpawnRate.toFixed(1); };
     document.getElementById('heartRateSlider').oninput=e=>{ heartSpawnProb=parseFloat(e.target.value); document.getElementById('heartRateVal').textContent=heartSpawnProb.toFixed(1); };
     document.getElementById('themeSelect').onchange=e=>{ currentTheme = {default:0, forest:1, lava:2}[e.target.value]; };
     document.getElementById('soundToggle').onchange=e=>{ soundEnabled = e.target.checked; };
-    
     const skinUpload = document.getElementById('skinUpload');
     let pendingSkinType = '';
     function handleSkinUpload(file, type) {
-      if(!file) return;
-      const reader = new FileReader();
-      reader.onload = ev => {
-        const img = new Image(); img.src = ev.target.result;
-        img.onload = () => {
-          if(type==='skin3') skin3 = img;
-          else if(type==='skin2') skin2 = img;
-          else if(type==='skin1') skin1 = img;
-          else if(type==='gameover') skinGameover = img;
-        };
-      };
-      reader.readAsDataURL(file);
+      if(!file) return; const reader = new FileReader();
+      reader.onload = ev => { const img = new Image(); img.src = ev.target.result;
+        img.onload = () => { if(type==='skin3') skin3 = img; else if(type==='skin2') skin2 = img; else if(type==='skin1') skin1 = img; else if(type==='gameover') skinGameover = img; };
+      }; reader.readAsDataURL(file);
     }
     document.getElementById('skin3Btn').onclick = ()=>{ pendingSkinType='skin3'; skinUpload.click(); };
     document.getElementById('skin2Btn').onclick = ()=>{ pendingSkinType='skin2'; skinUpload.click(); };
     document.getElementById('skin1Btn').onclick = ()=>{ pendingSkinType='skin1'; skinUpload.click(); };
     document.getElementById('gameoverSkinBtn').onclick = ()=>{ pendingSkinType='gameover'; skinUpload.click(); };
-    skinUpload.onchange = (e) => {
-      if(e.target.files.length) { handleSkinUpload(e.target.files[0], pendingSkinType); skinUpload.value=''; }
-    };
+    skinUpload.onchange = (e) => { if(e.target.files.length) { handleSkinUpload(e.target.files[0], pendingSkinType); skinUpload.value=''; } };
     document.getElementById('resetAllSkins').onclick = ()=>{ skin3=skin2=skin1=skinGameover=null; };
-    
     canvas.addEventListener('touchstart', e=>e.preventDefault());
     canvas.addEventListener('click', ()=>{ enableAudio(); canvas.focus(); });
-    
-    resetGame();
-    requestAnimationFrame(gameLoop);
+    resetGame(); requestAnimationFrame(gameLoop);
     document.body.addEventListener('click', enableAudio, {once:true});
   })();
 </script>
