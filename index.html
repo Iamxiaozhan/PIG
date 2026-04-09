@@ -3,12 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>🍰 甜品百层 · 修复版</title>
-  <!-- Firebase SDK (可选，若不配置则使用本地模拟排行) -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <title>🍰 甜品百层 · 防复制按钮</title>
   <style>
-    /* 全局样式保持不变，只增加摇杆相关样式（暂时注释） */
     * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
     body { background: #1e121c; display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: 'Segoe UI', 'Poppins', system-ui, sans-serif; padding: 0; margin: 0; }
     .game-wrapper { display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 780px; height: 100vh; max-height: 100vh; padding: 6px 4px; background: radial-gradient(circle at 30% 20%, #3b2535, #1e121c); }
@@ -17,10 +13,12 @@
     .game-icon { font-size: 1.5rem; }
     .game-title { font-size: 1.3rem; font-weight: 800; background: linear-gradient(135deg, #ffe2f0, #ffb3c6); -webkit-background-clip: text; background-clip: text; color: transparent; }
     .stats-group { display: flex; gap: 5px; }
-    .depth-panel, .lives-panel { display: flex; align-items: center; background: #2d1a28; border-radius: 30px; padding: 4px 10px; border: 1px solid #e598b0; box-shadow: inset 0 1px 4px #000, 0 3px 0 #1e0f18; gap: 4px; }
+    .depth-panel, .lives-panel, .record-panel { display: flex; align-items: center; background: #2d1a28; border-radius: 30px; padding: 4px 10px; border: 1px solid #e598b0; box-shadow: inset 0 1px 4px #000, 0 3px 0 #1e0f18; gap: 4px; }
     .depth-number { font-size: 1.5rem; font-weight: 900; color: #ffe3b0; }
     .heart-icon { font-size: 1.3rem; }
     #livesCount { font-size: 1.3rem; font-weight: bold; color: #ffb0b0; }
+    .record-icon { font-size: 1.3rem; }
+    #recordDisplay { font-size: 1.3rem; font-weight: bold; color: #ffd966; }
     .canvas-container { position: relative; border-radius: 20px; overflow: hidden; box-shadow: 0 15px 25px #00000080, 0 0 0 3px #8f5e7a; width: 100%; flex: 1; min-height: 0; display: flex; }
     #gameCanvas { display: block; width: 100%; height: 100%; object-fit: contain; background: #1e1320; cursor: pointer; outline: none; touch-action: none; }
     .action-bar { margin-top: 6px; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; }
@@ -34,25 +32,20 @@
       box-shadow: 0 6px 0 #22161f, 0 8px 16px black;
       display: flex; align-items: center; justify-content: center;
       cursor: pointer; transition: 0.05s;
-      touch-action: manipulation;  /* 关键：禁止默认手势 */
-      -webkit-touch-callout: none;
+      touch-action: manipulation;
+      -webkit-touch-callout: none;  /* 禁用长按菜单 */
+      user-select: none;            /* 禁止选中文字 */
     }
     .touch-btn.jump { background: #b85c7a; border-bottom-color: #6e344a; }
     .touch-btn:active { transform: translateY(5px); box-shadow: 0 1px 0 #22161f, 0 6px 12px black; }
     .hint-text { color: #dbb0c0; font-size: 0.75rem; margin-top: 2px; }
-    .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000000b0; display: none; justify-content: center; align-items: center; z-index: 2000; backdrop-filter: blur(4px); }
-    .modal.show { display: flex; }
-    .modal-content { background: #2f1d2b; border: 2px solid #e598b0; border-radius: 30px; padding: 20px; max-width: 400px; width: 90%; max-height: 70vh; overflow-y: auto; color: #fde3ef; box-shadow: 0 15px 30px black; }
-    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-    .modal-header h2 { color: #ffd0b0; }
-    .close-modal { background: none; border: none; color: #ffc0d0; font-size: 2rem; cursor: pointer; }
-    .rank-list { list-style: none; padding: 0; }
-    .rank-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #b2667a; font-size: 1.2rem; }
-    .rank-name { font-weight: bold; }
-    .rank-score { color: #ffe3b0; }
-    .input-nickname { width: 100%; padding: 10px; margin: 10px 0; background: #3f2638; border: 1px solid #d99fb8; border-radius: 30px; color: white; font-size: 1.1rem; }
-    .submit-score-btn { background: #b85c7a; border: none; border-bottom: 4px solid #6e344a; color: white; padding: 10px; width: 100%; border-radius: 40px; font-weight: bold; cursor: pointer; }
-    .settings-drawer { position: fixed; top: 0; right: 0; width: 300px; max-width: 85vw; height: 100vh; background: #2f1d2bf0; backdrop-filter: blur(20px); box-shadow: -8px 0 30px #00000060; border-left: 2px solid #e598b0; padding: 20px 16px; transform: translateX(100%); transition: transform 0.25s; z-index: 1000; overflow-y: auto; color: #fde3ef; }
+    .settings-drawer {
+      position: fixed; top: 0; right: 0; width: 300px; max-width: 85vw; height: 100vh;
+      background: #2f1d2bf0; backdrop-filter: blur(20px);
+      box-shadow: -8px 0 30px #00000060; border-left: 2px solid #e598b0;
+      padding: 20px 16px; transform: translateX(100%); transition: transform 0.25s;
+      z-index: 1000; overflow-y: auto; color: #fde3ef;
+    }
     .settings-drawer.open { transform: translateX(0); }
     .drawer-header { display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 1.5rem; }
     .close-btn { background: none; border: none; color: #ffc0d0; font-size: 2rem; cursor: pointer; }
@@ -71,17 +64,17 @@
 <body>
 <div class="game-wrapper">
   <div class="hero-bar">
-    <div class="title-section"><span class="game-icon">🍭</span><span class="game-title">甜品·修复版</span></div>
+    <div class="title-section"><span class="game-icon">🍭</span><span class="game-title">甜品·最高分</span></div>
     <div class="stats-group">
       <div class="depth-panel"><span>📉</span><span class="depth-number" id="depthDisplay">000</span></div>
       <div class="lives-panel"><span class="heart-icon">❤️</span><span id="livesCount">3</span></div>
+      <div class="record-panel"><span class="record-icon">🏆</span><span id="recordDisplay">0</span></div>
     </div>
   </div>
   <div class="canvas-container"><canvas id="gameCanvas" width="700" height="800" tabindex="0"></canvas></div>
   <div class="action-bar">
     <button class="btn" id="restartButton">🔄 重开</button>
     <button class="btn small" id="pauseButton">⏸️ 暂停</button>
-    <button class="btn small" id="rankBtn">🏆 排行</button>
     <button class="btn small" id="settingsToggle">⚙️ 设置</button>
   </div>
   <div class="touch-controls">
@@ -89,20 +82,7 @@
     <button class="touch-btn jump" id="touchJump">↑</button>
     <button class="touch-btn" id="touchRight">→</button>
   </div>
-  <div class="hint-text">← → 移动 · 拾❤回血 · 多点触控已优化</div>
-</div>
-
-<!-- 排行榜模态框 -->
-<div class="modal" id="rankModal">
-  <div class="modal-content">
-    <div class="modal-header"><h2>🏆 排行榜</h2><button class="close-modal" id="closeRankModal">&times;</button></div>
-    <div id="rankListContainer"><ul class="rank-list" id="rankList"></ul></div>
-    <div id="submitScoreArea" style="display:none;">
-      <input type="text" id="nicknameInput" class="input-nickname" placeholder="输入昵称" maxlength="12">
-      <button class="submit-score-btn" id="submitScoreBtn">提交分数</button>
-    </div>
-    <p style="margin-top:12px; font-size:0.9rem; text-align:center;">—— 本地模拟排行 (可替换Firebase) ——</p>
-  </div>
+  <div class="hint-text">← → 移动 · 拾❤回血 · 最高纪录永存</div>
 </div>
 
 <!-- 设置抽屉 -->
@@ -135,41 +115,23 @@
   (function(){
     "use strict";
     
-    // ---------- 排行榜：优先尝试Firebase，若未配置则使用本地模拟 ----------
-    let db = null;
-    let useFirebase = false;
+    // ---------- 最高纪录 ----------
+    let highScore = 0;
+    const RECORD_KEY = 'dessert_highscore';
     try {
-      const firebaseConfig = {
-        // 请替换为您的Firebase配置，留空则自动使用本地模拟
-        apiKey: "",
-        authDomain: "",
-        projectId: "",
-        storageBucket: "",
-        messagingSenderId: "",
-        appId: ""
-      };
-      if (firebaseConfig.apiKey) {
-        firebase.initializeApp(firebaseConfig);
-        db = firebase.firestore();
-        useFirebase = true;
-        console.log("Firebase已初始化");
-      }
-    } catch(e) { useFirebase = false; }
+      const saved = localStorage.getItem(RECORD_KEY);
+      if (saved) highScore = parseInt(saved) || 0;
+    } catch(e) { highScore = 0; }
+    const recordSpan = document.getElementById('recordDisplay');
+    recordSpan.textContent = highScore;
     
-    // 本地模拟排行榜存储
-    let localRankings = [];
-    const LOCAL_RANK_KEY = 'dessert_rankings';
-    function loadLocalRankings() {
-      try {
-        const stored = localStorage.getItem(LOCAL_RANK_KEY);
-        if(stored) localRankings = JSON.parse(stored);
-        else localRankings = [];
-      } catch(e){ localRankings = []; }
+    function updateHighScore(score) {
+      if (score > highScore) {
+        highScore = score;
+        recordSpan.textContent = highScore;
+        try { localStorage.setItem(RECORD_KEY, highScore); } catch(e) {}
+      }
     }
-    function saveLocalRankings() {
-      localStorage.setItem(LOCAL_RANK_KEY, JSON.stringify(localRankings));
-    }
-    loadLocalRankings();
     
     // ---------- 画布 ----------
     const canvas = document.getElementById('gameCanvas');
@@ -207,7 +169,6 @@
     let skin3 = null, skin2 = null, skin1 = null, skinGameover = null, currentTheme = 0;
     let playerScale = 1.0, landSquash = 0, scorePop = 0, lastDepth = 0;
     let soundEnabled = true, audioCtx = null;
-    let lastScoreSubmitted = false, pendingScore = 0;
     
     function initAudio(){ if(!audioCtx) try{ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); audioCtx.resume(); } catch(e){} }
     function playSound(t){ 
@@ -232,7 +193,7 @@
     }
     function resetGame(){
       gameActive = true; paused = false; document.getElementById('pauseButton').textContent = '⏸️ 暂停';
-      lives = 3; depth = 0; lastDepth = 0; updateUI(); lastScoreSubmitted = false;
+      lives = 3; depth = 0; lastDepth = 0; updateUI();
       player.width = BASE_PLAYER_W; player.height = BASE_PLAYER_H;
       player.x = W/2 - player.width/2; player.y = 340; player.vx = 0; player.vy = 0; player.isGrounded = false;
       invulnerable = false; invulnerableTimer = 0; playerScale=1; landSquash=0;
@@ -293,7 +254,6 @@
       if(!gameActive||paused) return;
       if(invulnerable){ invulnerableTimer--; if(invulnerableTimer<=0) invulnerable=false; }
       
-      // 空中摩擦力保持不变，但水平移动加速度依然有效
       if(left) player.vx -= ACCEL;
       if(right) player.vx += ACCEL;
       player.vx *= (player.isGrounded ? FRICTION_GROUND : FRICTION_AIR);
@@ -310,14 +270,10 @@
       }
       if(!up && !space) player.jumpPressed = false;
       
-      // 水平移动并限制边界
       player.x += player.vx;
       player.x = Math.max(0, Math.min(W - player.width, player.x));
-      
-      // 垂直移动
       player.y += player.vy;
       
-      // 平台碰撞处理（改进：空中不进行横向推出，避免吸墙）
       let grounded = false;
       for(let iter=0; iter<6; iter++) {
         for(let pl of platforms) {
@@ -326,33 +282,17 @@
             const ovB = (pl.y+pl.h)-player.y;
             const ovL = (player.x+player.width)-pl.x;
             const ovR = (pl.x+pl.w)-player.x;
-            
-            // 优先处理垂直碰撞
             if(ovT > 0 && ovT < ovL && ovT < ovR && player.vy >= 0) {
-              player.y = pl.y - player.height;
-              player.vy = 0;
-              grounded = true;
+              player.y = pl.y - player.height; player.vy = 0; grounded = true;
             } else if(ovB > 0 && ovB < ovL && ovB < ovR && player.vy < 0) {
-              player.y = pl.y + pl.h;
-              player.vy = 0.1;
+              player.y = pl.y + pl.h; player.vy = 0.1;
             } else {
-              // 水平碰撞：仅当角色在空中且未站在任何平台上时，才进行修正（避免空中吸墙）
-              // 但为了防止卡墙，仍进行简单处理
               if (player.isGrounded) {
-                if(ovL < ovR) {
-                  player.x = pl.x - player.width;
-                  player.vx = 0;
-                } else {
-                  player.x = pl.x + pl.w;
-                  player.vx = 0;
-                }
+                if(ovL < ovR) { player.x = pl.x - player.width; player.vx = 0; }
+                else { player.x = pl.x + pl.w; player.vx = 0; }
               } else {
-                // 空中轻微推开，但不完全阻止移动
-                if(ovL < ovR) {
-                  player.x = pl.x - player.width - 0.1;
-                } else {
-                  player.x = pl.x + pl.w + 0.1;
-                }
+                if(ovL < ovR) player.x = pl.x - player.width - 0.1;
+                else player.x = pl.x + pl.w + 0.1;
               }
             }
           }
@@ -363,7 +303,6 @@
       player.isGrounded = grounded;
       if(!wasGrounded && grounded) { landSquash=8; playerScale=0.85; playSound('land'); }
       
-      // 平台上升
       for(let pl of platforms) pl.y -= PLATFORM_SPEED;
       for(let pw of powerups) pw.y -= PLATFORM_SPEED;
       
@@ -391,15 +330,8 @@
       
       if(gameActive && !invulnerable && (player.y+player.height >= H || player.y <= 0)) {
         lives--; updateUI(); playSound('gameover');
-        if(lives <= 0) { 
-          gameActive = false; 
-          if(!lastScoreSubmitted) {
-            pendingScore = depth;
-            document.getElementById('submitScoreArea').style.display = 'block';
-            document.getElementById('rankModal').classList.add('show');
-            lastScoreSubmitted = true;
-          }
-        } else { respawnPlayer(); }
+        if(lives <= 0) { gameActive = false; updateHighScore(depth); }
+        else { respawnPlayer(); }
       }
       
       playerScale = playerScale*0.9 + 1.0*0.1; landSquash *= 0.7; scorePop = Math.max(0, scorePop-1);
@@ -489,10 +421,15 @@
       if(!gameActive) {
         ctx.fillStyle = '#1a0f16cc'; ctx.fillRect(0,0,W,H);
         if(skinGameover?.complete) { let imgSize = 300; ctx.drawImage(skinGameover, W/2 - imgSize/2, H/2 - imgSize/2, imgSize, imgSize); }
-        else { ctx.font='bold 48px Segoe UI'; ctx.fillStyle='#ffc0d0'; ctx.textAlign='center'; ctx.fillText('💔 游戏结束',W/2,H/2); }
+        else { 
+          ctx.font='bold 48px Segoe UI'; ctx.fillStyle='#ffc0d0'; ctx.textAlign='center'; 
+          ctx.fillText('💔 游戏结束',W/2,H/2-30);
+          ctx.font='bold 28px Segoe UI'; ctx.fillText(`最高分: ${highScore}`, W/2, H/2+30);
+        }
       } else if(paused) {
         ctx.fillStyle = '#2a1a28cc'; ctx.fillRect(0,0,W,H);
-        ctx.font='bold 48px Segoe UI'; ctx.fillStyle='#ffe0f0'; ctx.textAlign='center'; ctx.fillText('⏸ 暂停',W/2,H/2);
+        ctx.font='bold 48px Segoe UI'; ctx.fillStyle='#ffe0f0'; ctx.textAlign='center';
+        ctx.fillText('⏸ 暂停',W/2,H/2);
       }
       ctx.textAlign='left';
     }
@@ -505,51 +442,6 @@
       accumulator += deltaTime;
       while (accumulator >= FIXED_TIMESTEP) { fixedUpdate(); accumulator -= FIXED_TIMESTEP; }
       draw();
-    }
-    
-    // 排行榜功能
-    async function fetchRankings() {
-      const listEl = document.getElementById('rankList');
-      listEl.innerHTML = '<li style="text-align:center;">加载中...</li>';
-      try {
-        if (useFirebase && db) {
-          const snapshot = await db.collection('rankings').orderBy('score', 'desc').limit(10).get();
-          listEl.innerHTML = '';
-          if (snapshot.empty) { listEl.innerHTML = '<li>暂无记录</li>'; return; }
-          snapshot.forEach(doc => {
-            const data = doc.data();
-            const li = document.createElement('li'); li.className = 'rank-item';
-            li.innerHTML = `<span class="rank-name">${data.name||'匿名'}</span><span class="rank-score">${data.score}</span>`;
-            listEl.appendChild(li);
-          });
-        } else {
-          // 本地模拟
-          localRankings.sort((a,b)=>b.score-a.score);
-          listEl.innerHTML = '';
-          if (localRankings.length === 0) { listEl.innerHTML = '<li>暂无记录</li>'; return; }
-          localRankings.slice(0,10).forEach(r => {
-            const li = document.createElement('li'); li.className = 'rank-item';
-            li.innerHTML = `<span class="rank-name">${r.name}</span><span class="rank-score">${r.score}</span>`;
-            listEl.appendChild(li);
-          });
-        }
-      } catch(e) { listEl.innerHTML = '<li>加载失败</li>'; }
-    }
-    
-    async function submitScore(name, score) {
-      if(!name) name = '玩家';
-      name = name.substring(0,12);
-      try {
-        if (useFirebase && db) {
-          await db.collection('rankings').add({ name, score, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
-        } else {
-          localRankings.push({ name, score });
-          saveLocalRankings();
-        }
-        fetchRankings();
-        document.getElementById('submitScoreArea').style.display = 'none';
-        alert('分数已提交！');
-      } catch(e) { alert('提交失败'); }
     }
     
     // 事件绑定
@@ -572,26 +464,15 @@
     }
     window.addEventListener('keydown', handleKeyDown); window.addEventListener('keyup', handleKeyUp);
     
-    // 移动端触控：使用 pointerdown/pointerup 并设置 touch-action
     const touchLeft = document.getElementById('touchLeft');
     const touchRight = document.getElementById('touchRight');
     const touchJump = document.getElementById('touchJump');
-    
     function setupTouchButton(el, setter) {
-      el.addEventListener('pointerdown', (e) => {
-        e.preventDefault();
-        el.setPointerCapture(e.pointerId);
-        setter(true);
-      });
-      el.addEventListener('pointerup', (e) => {
-        e.preventDefault();
-        el.releasePointerCapture(e.pointerId);
-        setter(false);
-      });
-      el.addEventListener('pointercancel', (e) => {
-        e.preventDefault();
-        setter(false);
-      });
+      el.addEventListener('pointerdown', (e) => { e.preventDefault(); el.setPointerCapture(e.pointerId); setter(true); });
+      el.addEventListener('pointerup', (e) => { e.preventDefault(); el.releasePointerCapture(e.pointerId); setter(false); });
+      el.addEventListener('pointercancel', (e) => { e.preventDefault(); setter(false); });
+      // 额外阻止默认上下文菜单
+      el.addEventListener('contextmenu', (e) => e.preventDefault());
     }
     setupTouchButton(touchLeft, (v) => left = v);
     setupTouchButton(touchRight, (v) => right = v);
@@ -599,18 +480,6 @@
     
     document.getElementById('restartButton').onclick=()=>{ enableAudio(); resetGame(); };
     document.getElementById('pauseButton').onclick=()=>{ if(gameActive){ paused=!paused; document.getElementById('pauseButton').textContent = paused?'▶️ 继续':'⏸️ 暂停'; } };
-    
-    const modal = document.getElementById('rankModal');
-    document.getElementById('rankBtn').onclick = ()=>{
-      modal.classList.add('show');
-      fetchRankings();
-      document.getElementById('submitScoreArea').style.display = gameActive ? 'none' : (lastScoreSubmitted ? 'none' : 'block');
-    };
-    document.getElementById('closeRankModal').onclick = ()=> modal.classList.remove('show');
-    document.getElementById('submitScoreBtn').onclick = ()=>{
-      const name = document.getElementById('nicknameInput').value;
-      submitScore(name, pendingScore);
-    };
     
     const drawer=document.getElementById('settingsDrawer'), overlay=document.getElementById('overlay');
     document.getElementById('settingsToggle').onclick=()=>{ drawer.classList.add('open'); overlay.classList.add('show'); };
@@ -632,6 +501,7 @@
     document.getElementById('heartRateSlider').oninput=e=>{ heartSpawnProb=parseFloat(e.target.value); document.getElementById('heartRateVal').textContent=heartSpawnProb.toFixed(1); };
     document.getElementById('themeSelect').onchange=e=>{ currentTheme = {default:0, forest:1, lava:2}[e.target.value]; };
     document.getElementById('soundToggle').onchange=e=>{ soundEnabled = e.target.checked; };
+    
     const skinUpload = document.getElementById('skinUpload');
     let pendingSkinType = '';
     function handleSkinUpload(file, type) {
